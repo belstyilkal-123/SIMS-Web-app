@@ -1,0 +1,124 @@
+/* ================================================================
+   Billing pages — shared styles
+   ================================================================ */
+
+.bl-page    { display: flex; flex-direction: column; gap: 20px; }
+.bl-header  { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; flex-wrap: wrap; }
+.bl-header h2  { font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin: 0 0 4px; }
+.bl-subtitle   { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+
+/* ── KPI strip ─────────────────────────────────────────────── */
+.bl-kpi-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.bl-kpi {
+  flex: 1 1 120px; border-radius: 12px; padding: 16px 18px;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 5px; text-align: center; border: 1px solid transparent;
+}
+.bl-kpi-value { font-size: 1.4rem; font-weight: 800; line-height: 1.1; }
+.bl-kpi-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; }
+
+/* ── Filters ───────────────────────────────────────────────── */
+.bl-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.bl-input {
+  padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 0.875rem; background: var(--surface); color: var(--text-main);
+  outline: none; transition: border-color 0.15s; box-sizing: border-box;
+}
+.bl-input:focus { border-color: #16a34a; box-shadow: 0 0 0 2px rgba(22,163,74,0.12); }
+.bl-input-search { flex: 1 1 200px; }
+.bl-select  { min-width: 160px; }
+.bl-count   { font-size: 0.8rem; color: var(--text-muted); margin-left: auto; white-space: nowrap; }
+
+/* ── Cards ─────────────────────────────────────────────────── */
+.bl-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 22px 24px; box-shadow: var(--shadow-card);
+}
+.bl-card h3 { margin: 0 0 16px; font-size: 0.95rem; font-weight: 700; color: var(--text-main); }
+.bl-no-pad  { padding: 0; overflow: hidden; }
+
+/* ── Form ──────────────────────────────────────────────────── */
+.bl-form     { display: flex; flex-direction: column; gap: 14px; }
+.bl-form-row { display: flex; flex-wrap: wrap; gap: 14px; }
+.bl-field    { display: flex; flex-direction: column; gap: 5px; flex: 1 1 180px; min-width: 160px; }
+.bl-field label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.bl-field-wide  { flex: 2 1 360px; }
+.bl-net-preview {
+  background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px;
+  padding: 12px 16px; font-size: 0.9rem; color: #15803d; font-weight: 600;
+}
+.bl-form-actions { display: flex; gap: 10px; }
+.bl-textarea { min-height: 65px; resize: vertical; }
+
+/* ── Buttons ───────────────────────────────────────────────── */
+.bl-btn {
+  padding: 9px 20px; border-radius: 8px; font-size: 0.875rem;
+  font-weight: 600; border: none; cursor: pointer;
+  transition: opacity 0.15s; white-space: nowrap;
+}
+.bl-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.bl-btn-primary { background: #16a34a; color: white; }
+.bl-btn-primary:hover:not(:disabled) { background: #15803d; }
+.bl-btn-ghost   { background: var(--surface); color: var(--text-main); border: 1px solid var(--border); }
+.bl-btn-ghost:hover { background: var(--surface-hover); }
+.bl-btn-pay  { background: #dcfce7; color: #15803d; }
+.bl-btn-pay:hover:not(:disabled) { background: #bbf7d0; }
+.bl-btn-icon {
+  background: none; border: none; cursor: pointer;
+  font-size: 1rem; padding: 4px 6px; border-radius: 6px; transition: background 0.15s;
+}
+.bl-btn-icon:hover { background: var(--surface-hover); }
+.bl-btn-danger:hover { background: #fee2e2 !important; }
+
+/* ── Table ─────────────────────────────────────────────────── */
+.bl-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.bl-table th {
+  padding: 11px 14px; text-align: left; font-size: 0.72rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted);
+  background: var(--surface-hover); border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+.bl-table td { padding: 11px 14px; border-bottom: 1px solid var(--border); color: var(--text-main); vertical-align: middle; }
+.bl-table tr:last-child td { border-bottom: none; }
+.bl-table tr:hover td { background: var(--surface-hover); }
+.bl-tfoot td { background: var(--surface-hover); font-size: 0.875rem; }
+.bl-sub  { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+.bl-muted{ color: var(--text-muted); font-style: italic; }
+.bl-amount { font-weight: 700; }
+
+/* ── Badge ─────────────────────────────────────────────────── */
+.bl-badge {
+  display: inline-flex; align-items: center; padding: 3px 9px;
+  border-radius: 20px; font-size: 0.72rem; font-weight: 700; white-space: nowrap;
+}
+
+/* ── Invoice card (Farmer view) ────────────────────────────── */
+.bl-invoice-list { display: flex; flex-direction: column; gap: 14px; }
+.bl-invoice-item {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 18px 20px;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: 16px; flex-wrap: wrap; box-shadow: var(--shadow-card);
+}
+.bl-invoice-item-left  { flex: 1; min-width: 220px; }
+.bl-invoice-item-right { text-align: right; flex-shrink: 0; }
+.bl-invoice-meta { display: flex; gap: 14px; font-size: 0.78rem; color: var(--text-muted); margin-top: 8px; flex-wrap: wrap; }
+.bl-invoice-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+/* ── Modal ─────────────────────────────────────────────────── */
+.bl-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; padding: 16px;
+}
+.bl-modal {
+  background: var(--surface); border-radius: 14px; padding: 26px 28px;
+  width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+}
+.bl-modal h3 { margin: 0 0 16px; font-size: 1.05rem; font-weight: 700; color: var(--text-main); }
+
+/* ── Feedback ──────────────────────────────────────────────── */
+.bl-error   { background: #fee2e2; color: #b91c1c; border-radius: 8px; padding: 10px 14px; font-size: 0.84rem; font-weight: 500; border-left: 3px solid #ef4444; }
+.bl-success { background: #dcfce7; color: #15803d; border-radius: 8px; padding: 10px 14px; font-size: 0.84rem; font-weight: 500; border-left: 3px solid #22c55e; }
+.bl-empty   { text-align: center; padding: 50px; color: var(--text-muted); font-size: 0.9rem; }
+.bl-loading { text-align: center; padding: 60px; color: var(--text-muted); }

@@ -1,0 +1,76 @@
+/* Farmer Pages */
+.fp-page { display: flex; flex-direction: column; gap: 20px; }
+.fp-header h2 { font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin: 0 0 4px; }
+.fp-subtitle { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+.fp-loading { text-align: center; padding: 60px; color: var(--text-muted); }
+
+.fp-controls { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+.fp-field { display: flex; flex-direction: column; gap: 5px; }
+.fp-field label { font-size: 0.74rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+.fp-select {
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  background: var(--surface);
+  color: var(--text-main);
+  min-width: 160px;
+}
+
+.fp-tab-group { display: flex; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+.fp-tab { padding: 8px 16px; border: none; background: transparent; color: var(--text-muted); font-size: 0.84rem; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.fp-tab.active { background: #16a34a; color: white; }
+.fp-tab:hover:not(.active) { background: var(--surface-hover); }
+
+.fp-kpi-row { display: flex; gap: 14px; flex-wrap: wrap; }
+.fp-kpi {
+  flex: 1 1 120px;
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+.fp-kpi-icon { font-size: 1.4rem; }
+.fp-kpi-value { font-size: 1.6rem; font-weight: 800; line-height: 1; }
+.fp-kpi-label { font-size: 0.74rem; color: var(--text-muted); font-weight: 500; }
+
+.fp-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  box-shadow: var(--shadow-card);
+}
+.fp-card h3 { margin: 0 0 16px; font-size: 0.95rem; font-weight: 700; color: var(--text-main); }
+.fp-no-pad { padding: 0; overflow: hidden; }
+.fp-empty-card { text-align: center; padding: 40px; }
+.fp-empty-card p { color: var(--text-muted); font-size: 0.9rem; }
+
+.fp-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.fp-table th { padding: 11px 16px; text-align: left; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); background: var(--surface-hover); border-bottom: 1px solid var(--border); }
+.fp-table td { padding: 11px 16px; border-bottom: 1px solid var(--border); color: var(--text-main); vertical-align: middle; }
+.fp-table tr:last-child td { border-bottom: none; }
+.fp-table tr:hover td { background: var(--surface-hover); }
+.fp-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+.fp-muted { color: var(--text-muted); font-style: italic; }
+.fp-badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 20px; font-size: 0.74rem; font-weight: 700; text-transform: capitalize; }
+
+/* ── PDF Export button ──────────────────────────────────────── */
+.fp-btn-pdf {
+  background: #dc2626;
+  color: white;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.fp-btn-pdf:hover:not(:disabled) { background: #b91c1c; }
+.fp-btn-pdf:disabled { opacity: 0.45; cursor: not-allowed; }

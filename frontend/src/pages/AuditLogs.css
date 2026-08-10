@@ -1,0 +1,118 @@
+/* AuditLogs page */
+.al-page { display: flex; flex-direction: column; gap: 18px; }
+
+.al-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.al-header h2 { font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin: 0 0 4px; }
+.al-subtitle   { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+
+.al-btn-pdf {
+  background: #dc2626; color: white;
+  padding: 9px 18px; border-radius: 8px;
+  font-size: 0.84rem; font-weight: 600;
+  border: none; cursor: pointer;
+  white-space: nowrap; flex-shrink: 0;
+  transition: background 0.15s;
+}
+.al-btn-pdf:hover:not(:disabled) { background: #b91c1c; }
+.al-btn-pdf:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ── Filters ────────────────────────────────────────────────── */
+.al-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.al-input {
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  background: var(--surface);
+  color: var(--text-main);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.al-input:focus { border-color: #16a34a; box-shadow: 0 0 0 2px rgba(22,163,74,0.12); }
+.al-search { flex: 1 1 220px; }
+.al-select { min-width: 150px; }
+.al-count  { font-size: 0.8rem; color: var(--text-muted); margin-left: auto; white-space: nowrap; }
+
+/* ── Card / table ───────────────────────────────────────────── */
+.al-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-card);
+}
+.al-no-pad { padding: 0; overflow: hidden; }
+
+.al-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.al-table th {
+  padding: 11px 16px;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  background: var(--surface-hover);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.al-table td {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-main);
+  vertical-align: middle;
+}
+.al-table tr:last-child td { border-bottom: none; }
+.al-table tr:hover td      { background: var(--surface-hover); }
+
+.al-ts { white-space: nowrap; }
+.al-ts span { display: block; font-size: 0.82rem; }
+.al-ts-time { color: var(--text-muted); font-size: 0.72rem !important; }
+.al-sub     { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+.al-details { color: var(--text-muted); font-size: 0.82rem; max-width: 280px;
+              white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.al-ip      { font-size: 0.78rem; color: var(--text-muted); font-family: monospace; }
+
+.al-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── Pagination ─────────────────────────────────────────────── */
+.al-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.al-page-btn {
+  padding: 7px 13px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text-main);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.al-page-btn:hover:not(:disabled) { background: var(--surface-hover); border-color: #16a34a; }
+.al-page-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.al-page-info { font-size: 0.84rem; color: var(--text-muted); padding: 0 4px; }
+
+.al-loading { text-align: center; padding: 60px; color: var(--text-muted); }
+.al-empty   { text-align: center; padding: 40px; color: var(--text-muted); font-size: 0.9rem; }

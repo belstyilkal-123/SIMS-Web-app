@@ -1,0 +1,142 @@
+/* Labour Pages */
+.lp-page { display: flex; flex-direction: column; gap: 20px; }
+.lp-header h2 { font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin: 0 0 4px; }
+.lp-subtitle { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+.lp-loading { text-align: center; padding: 60px; color: var(--text-muted); }
+
+.lp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.lp-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 24px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.lp-card h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.lp-activities-card { grid-column: span 2; }
+@media (max-width: 700px) { .lp-activities-card { grid-column: span 1; } }
+
+.lp-date-badge {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: var(--surface-hover);
+  padding: 5px 12px;
+  border-radius: 20px;
+  width: fit-content;
+}
+
+.lp-field label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+.lp-select {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  background: var(--surface);
+  color: var(--text-main);
+  width: 100%;
+}
+
+.lp-attendance-status { display: flex; gap: 16px; }
+.lp-stat { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+.lp-stat-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+.lp-stat-value { font-size: 1.1rem; font-weight: 700; color: var(--text-main); }
+
+.lp-attendance-btns { display: flex; gap: 10px; }
+.lp-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 9px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.lp-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.lp-btn-checkin { background: #16a34a; color: white; }
+.lp-btn-checkout { background: #2563eb; color: white; }
+
+.lp-pump-status {
+  border-radius: 10px;
+  padding: 12px 16px;
+  text-align: center;
+  font-size: 0.95rem;
+}
+.lp-offline-note {
+  background: #fef3c7; color: #92400e;
+  padding: 8px 12px; border-radius: 8px;
+  font-size: 0.82rem; font-weight: 500;
+}
+.lp-pump-btn {
+  padding: 14px;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  color: white;
+  transition: all 0.2s;
+}
+.lp-pump-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.lp-pump-start { background: linear-gradient(135deg, #2563eb, #1d4ed8); box-shadow: 0 4px 14px rgba(37,99,235,0.3); }
+.lp-pump-stop  { background: linear-gradient(135deg, #ef4444, #b91c1c); box-shadow: 0 4px 14px rgba(239,68,68,0.3); }
+
+.lp-alerts { display: flex; flex-direction: column; gap: 6px; }
+.lp-alert { padding: 7px 12px; border-radius: 7px; font-size: 0.82rem; font-weight: 500; }
+.lp-alert-alarm   { background: #fee2e2; color: #b91c1c; }
+.lp-alert-warning { background: #fef3c7; color: #92400e; }
+.lp-alert-info    { background: #dbeafe; color: #1e40af; }
+
+.lp-activity-list { display: flex; flex-direction: column; gap: 10px; }
+.lp-activity-item {
+  background: var(--surface-hover);
+  border-radius: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.lp-activity-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.lp-activity-desc { font-size: 0.82rem; color: var(--text-muted); margin: 0; }
+.lp-activity-meta { display: flex; gap: 14px; font-size: 0.78rem; color: var(--text-muted); }
+.lp-activity-actions { display: flex; gap: 8px; margin-top: 2px; }
+
+.lp-btn-sm {
+  padding: 6px 14px;
+  border-radius: 7px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+}
+.lp-btn-blue  { background: #dbeafe; color: #1e40af; }
+.lp-btn-green { background: #dcfce7; color: #15803d; }
+
+.lp-badge { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; text-transform: capitalize; }
+.lp-empty { text-align: center; padding: 24px; color: var(--text-muted); font-size: 0.9rem; }
+.lp-muted { font-size: 0.78rem; color: var(--text-muted); }
+
+.lp-payroll-list { display: flex; flex-direction: column; gap: 10px; }
+.lp-payroll-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 14px;
+  background: var(--surface-hover);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.lp-pay-amount { font-size: 1.05rem; color: var(--text-main); }
