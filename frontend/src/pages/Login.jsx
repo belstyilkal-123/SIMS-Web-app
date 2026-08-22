@@ -19,8 +19,6 @@ const T = {
     invalidEmail: 'Enter a valid email address',
     passwordRequired: 'Password is required',
     loginFailed: 'Invalid email or password. Please try again.',
-    orDivider: 'or',
-    magicLinkBtn: 'Sign in with Magic Link (no password)',
   },
   am: {
     title: 'እንኳን ደህና መጡ',
@@ -36,8 +34,6 @@ const T = {
     invalidEmail: 'ትክክለኛ ኢሜይል አድራሻ ያስፈልጋል',
     passwordRequired: 'የይለፍ ቃል ያስፈልጋል',
     loginFailed: 'ትክክል ያልሆነ ኢሜይል ወይም የይለፍ ቃል። እንደገና ይሞክሩ።',
-    orDivider: 'ወይም',
-    magicLinkBtn: 'በማጂክ ሊንክ ይግቡ (የይለፍ ቃል አያስፈልግም)',
   }
 };
 
@@ -45,7 +41,7 @@ const Login = () => {
   const [lang, setLang]          = useState(localStorage.getItem('preferredLanguage') || 'en');
   const [values, setValues]      = useState({ email: '', password: '' });
   const [touched, setTouched]    = useState({});
-  const [globalError, setGlobal] = useState('');
+  const [globalError, setGlobal] = useState({ msg: '', status: null });
   const [submitting, setSub]     = useState(false);
 
   const { login } = useContext(AuthContext);
@@ -70,10 +66,27 @@ const Login = () => {
 
   // Role-aware redirect after login
   const ROLE_HOME = {
-    super_administrator: '/dashboard',
-    office_manager:      '/office/overview',
-    farmer:              '/dashboard',
-    labor:               '/labour/dashboard',
+    owner:          '/owner/dashboard',
+    admin:          '/admin/dashboard',
+    office_manager: '/office/overview',
+    farmer:         '/dashboard',
+    labor:          '/labour/dashboard',
+  };
+
+  // Status-specific messages shown below the error
+  const STATUS_MESSAGES = {
+    en: {
+      pending:     '⏳ Your account is under review. You will receive an email once approved.',
+      rejected:    '❌ Your registration was not approved. Please contact the administrator.',
+      suspended:   '🚫 Your account has been suspended. Contact the administrator for help.',
+      deactivated: '⚠️ Your account has been deactivated.',
+    },
+    am: {
+      pending:     '⏳ መለያዎ ሲፀድቅ ይጠብቁ። ኢሜይል ይደርስዎታል።',
+      rejected:    '❌ ምዝገባዎ ተቀባይነት አላገኘም። አስተዳዳሪውን ያነጋግሩ።',
+      suspended:   '🚫 መለያዎ ታግዷል። አስተዳዳሪውን ያነጋግሩ።',
+      deactivated: '⚠️ መለያዎ ተሰርዟል።',
+    },
   };
 
   const handleSubmit = async e => {
@@ -81,22 +94,18 @@ const Login = () => {
     setTouched({ email: true, password: true });
     if (!formValid) return;
     setSub(true);
-    setGlobal('');
+    setGlobal({ msg: '', status: null });
     const res = await login(values.email.trim().toLowerCase(), values.password);
     setSub(false);
     if (res.success) {
-      // Use the returned user role to navigate to the right home page
       const home = ROLE_HOME[res.role] || '/dashboard';
       navigate(home);
     } else {
-      // Make rate-limit errors more friendly
-      const msg = res.error || t.loginFailed;
-      const isTooMany = msg.toLowerCase().includes('too many') || msg.toLowerCase().includes('rate');
-      setGlobal(isTooMany
-        ? (lang === 'am'
-            ? '⏳ ብዙ ሙከራዎች። እባክዎ ከ15 ደቂቃ በኋላ እንደገና ይሞክሩ።'
-            : '⏳ Too many login attempts. Please wait 15 minutes and try again.')
-        : msg);
+      // Show status-specific message if account is pending/rejected/suspended
+      const statusMsg = res.accountStatus
+        ? (STATUS_MESSAGES[lang]?.[res.accountStatus] || res.error)
+        : res.error || t.loginFailed;
+      setGlobal({ msg: statusMsg, status: res.accountStatus });
     }
   };
 
@@ -113,7 +122,7 @@ const Login = () => {
           <div style={{ display:'flex', border:'1px solid var(--border)', borderRadius:8, overflow:'hidden' }}>
             {['en','am'].map(l => (
               <button key={l}
-                onClick={() => { setLang(l); localStorage.setItem('preferredLanguage', l); }}
+                onClick={() => { setLang(l); localStorage.setItem('preferredLanguage', l); if (l === 'am') { document.cookie = 'googtrans=/en/am; path=/'; document.cookie = 'googtrans=/en/am; path=/; domain=' + window.location.hostname; } else { document.cookie = 'googtrans=/en/en; path=/'; document.cookie = 'googtrans=/en/en; path=/; domain=' + window.location.hostname; } window.location.reload(); }}
                 style={{ padding:'4px 10px', border:'none', cursor:'pointer', fontWeight:600, fontSize:'0.78rem',
                   background: lang === l ? 'var(--primary)' : 'var(--surface)',
                   color:      lang === l ? 'white' : 'var(--text-muted)' }}>
@@ -123,34 +132,28 @@ const Login = () => {
           </div>
         </div>
 
-        {/* Magic Link button */}
-        <Link to="/auth/magic-link" style={{
-            width:'100%', display:'flex', alignItems:'center', justifyContent:'center',
-            gap:10, padding:'12px 16px', borderRadius:10,
-            border:'1.5px solid var(--border)', background:'var(--surface)',
-            color:'var(--text-main)', fontSize:'0.92rem', fontWeight:600,
-            textDecoration:'none', marginBottom:'16px',
-            boxShadow:'0 1px 3px rgba(0,0,0,0.05)', transition:'all 0.2s',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor='var(--primary)'; e.currentTarget.style.boxShadow='0 2px 8px rgba(21,128,61,0.15)'; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor='var(--border)';  e.currentTarget.style.boxShadow='0 1px 3px rgba(0,0,0,0.05)'; }}>
-          <span style={{ fontSize:'1.1rem' }}>✨</span>
-          {t.magicLinkBtn}
-        </Link>
-
-        {/* Divider */}
-        <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:'16px' }}>
-          <div style={{ flex:1, height:1, background:'var(--border)' }}/>
-          <span style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontWeight:500 }}>{t.orDivider}</span>
-          <div style={{ flex:1, height:1, background:'var(--border)' }}/>
-        </div>
-
-        {/* Global error */}
-        {globalError && (
-          <div style={{ background:'#fee2e2', border:'1px solid #fca5a5', borderRadius:8,
-            padding:'10px 14px', marginBottom:'1rem', color:'#b91c1c',
-            fontSize:'0.875rem', fontWeight:500, display:'flex', gap:8, alignItems:'center' }}>
-            <span>🔒</span> {globalError}
+        {/* Global error / status message */}
+        {globalError.msg && (
+          <div style={{
+            background: globalError.status === 'pending' ? '#fffbeb' :
+                        globalError.status === 'rejected' ? '#fee2e2' :
+                        globalError.status === 'suspended' ? '#fff1f2' : '#fee2e2',
+            border: `1px solid ${
+              globalError.status === 'pending'   ? '#fcd34d' :
+              globalError.status === 'rejected'  ? '#fca5a5' :
+              globalError.status === 'suspended' ? '#fda4af' : '#fca5a5'
+            }`,
+            borderRadius: 8, padding: '11px 14px', marginBottom: '1rem',
+            color: globalError.status === 'pending' ? '#92400e' : '#b91c1c',
+            fontSize: '0.875rem', fontWeight: 500,
+            display: 'flex', flexDirection: 'column', gap: 4,
+          }}>
+            <span>{globalError.msg}</span>
+            {globalError.status === 'pending' && (
+              <Link to="/register" style={{ fontSize: '0.8rem', color: '#92400e', fontWeight: 700 }}>
+                → Check registration status or register again
+              </Link>
+            )}
           </div>
         )}
 
@@ -189,3 +192,5 @@ const Login = () => {
 };
 
 export default Login;
+
+

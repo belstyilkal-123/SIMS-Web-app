@@ -9,6 +9,7 @@ import {
 import GISMap from '../components/GISMap';
 import EmptyState from '../components/EmptyState';
 import FormField from '../components/FormField';
+import PermissionDeniedToast from '../components/common/PermissionDeniedToast';
 import { API_URL, SOCKET_URL } from '../config/api';
 import './Dashboard.css';
 
@@ -136,6 +137,26 @@ export default function FarmIrrigation() {
   const isAm = user?.language === 'am';
   const t    = T[isAm ? 'am' : 'en'];
   const cfg  = { headers: { Authorization: `Bearer ${user?.token}` } };
+
+  // Role-based permissions:
+  // - Owner: Full access (Add, Edit, Delete farms)
+  // - Farmer: Edit only (can manage crops/irrigation but not create/delete farms)
+  // - Admin: View-only (system oversight)
+  // - Labour: Limited view (can see assigned farms, no management)
+  // - Office Manager: No access (should not reach this page)
+  const userRole       = user?.assignedRole || user?.role;
+  const isOwner        = userRole === 'owner';
+  const isFarmer       = userRole === 'farmer';
+  const isAdmin        = userRole === 'admin';
+  const isLabour       = userRole === 'labor' || userRole === 'labour';
+  const canAddFarm     = isOwner;
+  const canEditFarm    = isOwner;
+  const canDeleteFarm  = isOwner;
+  const isViewOnly     = isAdmin || isLabour;
+  const canControlPump = isOwner || isFarmer;
+
+  /* ── Permission denied toast ──────────────────────────────────────────── */
+  const [showPermDenied, setShowPermDenied] = useState(false);
 
   /* ── tab ───────────────────────────────────────────────────────────────── */
   const [activeTab, setActiveTab] = useState('farm');
@@ -371,15 +392,21 @@ export default function FarmIrrigation() {
       ════════════════════════════════════════════════════════════════ */}
       {activeTab === 'farm' && (
         <div>
-          <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:18 }}>
-            <button className="btn btn-primary" onClick={openAdd}>+ {t.addNewFarm}</button>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
+            <span style={{ fontSize:'0.85rem', color:'var(--text-muted)' }}>
+              {isAdmin ? '👁️ View-only mode — Farm management is restricted to Owners and Farmers.' : 
+               isLabour ? '👁️ Limited view — Farm management is restricted.' : ''}
+            </span>
+            {canAddFarm && (
+              <button className="btn btn-primary" onClick={openAdd}>+ {t.addNewFarm}</button>
+            )}
           </div>
 
           {loadingFarms ? (
             <p style={{ color:'var(--text-muted)' }}>{t.loading}</p>
           ) : farms.length === 0 ? (
             <div style={{ background:'var(--surface)', borderRadius:14, border:'1px solid var(--border)' }}>
-              <EmptyState type="farm" isAmharic={isAm} action={openAdd} actionLabel={`+ ${t.addNewFarm}`} />
+              <EmptyState type="farm" isAmharic={isAm} action={canAddFarm ? openAdd : undefined} actionLabel={canAddFarm ? `+ ${t.addNewFarm}` : undefined} />
             </div>
           ) : (
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:20 }}>
@@ -422,12 +449,16 @@ export default function FarmIrrigation() {
                         ))}
                       </div>
                       <div style={{ display:'flex', gap:8 }}>
-                        <button className="btn btn-outline" style={{ flex:1, padding:'8px', fontSize:'0.82rem' }}
-                          onClick={() => openEdit(farm)}>✏️ {isAm ? 'አስተካክል' : 'Edit'}</button>
-                        <button onClick={() => handleDelete(farm._id)}
-                          style={{ padding:'8px 14px', fontSize:'0.82rem', borderRadius:8,
-                            background:'#fee2e2', color:'#b91c1c', border:'1px solid #fca5a5',
-                            cursor:'pointer', fontWeight:600 }}>🗑️</button>
+                        {canEditFarm && (
+                          <button className="btn btn-outline" style={{ flex:1, padding:'8px', fontSize:'0.82rem' }}
+                            onClick={() => openEdit(farm)}>✏️ {isAm ? 'አስተካክል' : 'Edit'}</button>
+                        )}
+                        {canDeleteFarm && (
+                          <button onClick={() => handleDelete(farm._id)}
+                            style={{ padding:'8px 14px', fontSize:'0.82rem', borderRadius:8,
+                              background:'#fee2e2', color:'#b91c1c', border:'1px solid #fca5a5',
+                              cursor:'pointer', fontWeight:600 }}>🗑️</button>
+                        )}
                         {/* Quick-jump to Irrigation tab for this farm */}
                         <button
                           title={t.irrigationSwitchHint}
@@ -524,31 +555,7 @@ export default function FarmIrrigation() {
               </div>
             </div>
 
-            {/* ── NPK ──────────────────────────────────────────────────── */}
-            <div className="card summary-card">
-              <h3>{t.npkInfo}</h3>
-              <div style={{ display:'flex', flexDirection:'column', gap:12, marginTop:15 }}>
-                {[
-                  { label:t.nitrogen,   val:sensorData.nitrogen,   color:'#3b82f6' },
-                  { label:t.phosphorus, val:sensorData.phosphorus, color:'#eab308' },
-                  { label:t.potassium,  val:sensorData.potassium,  color:'#ef4444' },
-                ].map(n => (
-                  <div key={n.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                    <span style={{ color:'var(--text-muted)' }}>{n.label}:</span>
-                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                      <div style={{ width:80, height:8, background:'#e2e8f0', borderRadius:4, overflow:'hidden' }}>
-                        <div style={{ height:'100%', background:n.color,
-                          width:`${isOnline && n.val !== null ? Math.min(100, n.val) : 0}%` }} />
-                      </div>
-                      <strong style={{ fontSize:'1rem', width:40, textAlign:'right',
-                        color: isOnline ? n.color : 'var(--text-muted)' }}>
-                        {isOnline && n.val !== null ? `${n.val} mg` : '--'}
-                      </strong>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+
 
             {/* ── Alerts & Buzzer ───────────────────────────────────────── */}
             <div className="card summary-card" style={{ display:'flex', flexDirection:'column', justifyContent:'space-between' }}>
@@ -580,7 +587,14 @@ export default function FarmIrrigation() {
                 </div>
                 <button className="btn btn-outline"
                   style={{ padding:'6px 12px', fontSize:'0.85rem', borderRadius:8 }}
-                  onClick={toggleBuzzer} disabled={!isOnline}>
+                  onClick={() => {
+                    if (!canControlPump) {
+                      setShowPermDenied(true);
+                      return;
+                    }
+                    toggleBuzzer();
+                  }}
+                  disabled={!isOnline}>
                   🔊 {sensorData.buzzerStatus === 'ON' ? t.muteBuzzer : t.testBuzzer}
                 </button>
               </div>
@@ -702,8 +716,9 @@ export default function FarmIrrigation() {
               </div>
             </div>
 
-            {/* ── Manual Pump Control ──────────────────────────────────── */}
-            <div className="card" style={{ gridColumn:'3 / 4', display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'stretch' }}>
+            {/* ── Manual Pump Control / View-only notice ──────── */}
+            <div className="card" style={{ gridColumn:'3 / 4', display:'flex', flexDirection:'column',
+              justifyContent:'center', alignItems:'stretch' }}>
               <h3 style={{ textAlign:'center' }}>{t.manualControlTitle}</h3>
               <p style={{ textAlign:'center', color:'var(--text-muted)', fontSize:'0.85rem', margin:'10px 0 16px' }}>
                 {t.overrideText}
@@ -720,42 +735,71 @@ export default function FarmIrrigation() {
                 </span>
               </div>
 
-              {/* Pump button */}
-              <button onClick={togglePump} className="btn"
-                style={{
-                  padding:16, fontSize:'1rem', fontWeight:700, borderRadius:12, width:'100%',
-                  border:'none', color:'white', transition:'all 0.2s',
-                  opacity: isOnline ? 1 : 0.45,
-                  cursor: isOnline ? 'pointer' : 'not-allowed',
-                  background: !isOnline
-                    ? '#cbd5e1'
-                    : sensorData.pumpStatus === 'ON'
-                      ? 'linear-gradient(135deg,#ef4444,#b91c1c)'
-                      : 'linear-gradient(135deg,#2563eb,#1d4ed8)',
-                  boxShadow: isOnline
-                    ? sensorData.pumpStatus === 'ON'
-                      ? '0 4px 14px rgba(239,68,68,0.35)'
-                      : '0 4px 14px rgba(37,99,235,0.35)'
-                    : 'none',
-                }}
-                disabled={!isOnline}>
-                {sensorData.pumpStatus === 'ON' ? t.stopPump : t.startPump}
-              </button>
+              {canControlPump ? (
+                <>
+                  <button 
+                    onClick={() => {
+                      if (!isOnline) return;
+                      togglePump();
+                    }} 
+                    className="btn"
+                    style={{
+                      padding:16, fontSize:'1rem', fontWeight:700, borderRadius:12, width:'100%',
+                      border:'none', color:'white', transition:'all 0.2s',
+                      opacity: isOnline ? 1 : 0.45,
+                      cursor: isOnline ? 'pointer' : 'not-allowed',
+                      background: !isOnline
+                        ? '#cbd5e1'
+                        : sensorData.pumpStatus === 'ON'
+                          ? 'linear-gradient(135deg,#ef4444,#b91c1c)'
+                          : 'linear-gradient(135deg,#2563eb,#1d4ed8)',
+                      boxShadow: isOnline
+                        ? sensorData.pumpStatus === 'ON'
+                          ? '0 4px 14px rgba(239,68,68,0.35)'
+                          : '0 4px 14px rgba(37,99,235,0.35)'
+                        : 'none',
+                    }}
+                    disabled={!isOnline}>
+                    {sensorData.pumpStatus === 'ON' ? t.stopPump : t.startPump}
+                  </button>
 
-              {!isOnline && (
-                <p style={{ textAlign:'center', color:'var(--danger)', fontSize:'0.78rem', marginTop:8, fontWeight:500 }}>
-                  ⛔ {isAm ? 'ለቁጥጥር መሣሪያ ኦንላይን መሆን አለበት' : 'Device must be online to use controls'}
-                </p>
+                  {!isOnline && (
+                    <p style={{ textAlign:'center', color:'var(--danger)', fontSize:'0.78rem', marginTop:8, fontWeight:500 }}>
+                      ⛔ {isAm ? 'ለቁጥጥር መሣሪያ ኦንላይን መሆን አለበት' : 'Device must be online to use controls'}
+                    </p>
+                  )}
+
+                  <div style={{ textAlign:'center', marginTop:12, padding:10, borderRadius:8,
+                    background: sensorData.pumpStatus === 'ON' ? '#fee2e2' : '#dcfce7',
+                    opacity: isOnline ? 1 : 0.55 }}>
+                    <strong style={{ fontSize:'0.88rem',
+                      color: sensorData.pumpStatus === 'ON' ? '#b91c1c' : '#15803d' }}>
+                      {sensorData.pumpStatus === 'ON' ? t.pumpRunning : t.pumpStopped}
+                    </strong>
+                  </div>
+                </>
+              ) : (
+                /* View-only notice for Admin/Labour */
+                <div 
+                  onClick={() => setShowPermDenied(true)}
+                  style={{ 
+                    padding:'16px', borderRadius:10, background:'#f1f5f9',
+                    textAlign:'center', fontSize:'0.85rem', color:'var(--text-muted)', fontWeight:500,
+                    border:'1px solid var(--border)', cursor:'pointer',
+                    transition:'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#e2e8f0';
+                    e.currentTarget.style.borderColor = '#cbd5e1';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#f1f5f9';
+                    e.currentTarget.style.borderColor = 'var(--border)';
+                  }}>
+                  👁️ Pump control is restricted to Owners and Farmers.<br/>
+                  <span style={{ fontSize:'0.78rem' }}>You can monitor but not operate the pump.</span>
+                </div>
               )}
-
-              <div style={{ textAlign:'center', marginTop:12, padding:10, borderRadius:8,
-                background: sensorData.pumpStatus === 'ON' ? '#fee2e2' : '#dcfce7',
-                opacity: isOnline ? 1 : 0.55 }}>
-                <strong style={{ fontSize:'0.88rem',
-                  color: sensorData.pumpStatus === 'ON' ? '#b91c1c' : '#15803d' }}>
-                  {sensorData.pumpStatus === 'ON' ? t.pumpRunning : t.pumpStopped}
-                </strong>
-              </div>
             </div>
 
             {/* ── GIS Map ───────────────────────────────────────────────── */}
@@ -840,6 +884,12 @@ export default function FarmIrrigation() {
         </div>
       )}
 
+      {/* Permission Denied Toast */}
+      <PermissionDeniedToast 
+        show={showPermDenied} 
+        onClose={() => setShowPermDenied(false)} 
+        isAmharic={isAm} 
+      />
     </div>
   );
 }

@@ -8,9 +8,11 @@ import './Maintenance.css';
 /* ── colour maps ──────────────────────────────────────────────────────── */
 const STATUS_COLORS = {
   open:        { bg:'#fef3c7', color:'#92400e' },
+  approved:    { bg:'#dcfce7', color:'#15803d' },
   assigned:    { bg:'#dbeafe', color:'#1e40af' },
   in_progress: { bg:'#ede9fe', color:'#7c3aed' },
   resolved:    { bg:'#dcfce7', color:'#15803d' },
+  confirmed:   { bg:'#dbeafe', color:'#1e40af' },
   closed:      { bg:'#f1f5f9', color:'#475569' },
   rejected:    { bg:'#fee2e2', color:'#b91c1c' },
 };
@@ -21,13 +23,13 @@ const PRIORITY_COLORS = {
   low:      { bg:'#f1f5f9', color:'#475569' },
 };
 
-const STATUSES    = ['open','assigned','in_progress','resolved','closed','rejected'];
+const STATUSES    = ['open','approved','assigned','in_progress','resolved','confirmed','closed','rejected'];
 const PRIORITIES  = ['low','medium','high','critical'];
 const CATEGORIES  = ['pump','pipe','sensor','valve','electrical','filter','tank','other'];
 
 const emptyForm = {
   farmId:'', deviceId:'', title:'', description:'',
-  category:'other', priority:'medium', scheduledFor:'',
+  category:'other', priority:'medium', scheduledFor:'', repairCost:''
 };
 
 export default function MaintenanceManagement() {
@@ -115,6 +117,7 @@ export default function MaintenanceManagement() {
       category:     tk.category,
       priority:     tk.priority,
       scheduledFor: tk.scheduledFor ? tk.scheduledFor.slice(0, 10) : '',
+      repairCost:   tk.repairCost || '',
     });
     setShowForm(true); setError(''); setSuccess('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -181,8 +184,16 @@ export default function MaintenanceManagement() {
       {/* Header */}
       <div className="mt-header">
         <div>
-          <h2>🔧 Maintenance Management</h2>
-          <p className="mt-subtitle">Track, assign, and resolve field maintenance tickets.</p>
+          <h2>
+            {user.role === 'owner' ? '👑 Maintenance Oversight' : 
+             user.role === 'farmer' ? '🌱 Farm Maintenance' : 
+             '🏢 Coordinate Maintenance'}
+          </h2>
+          <p className="mt-subtitle">
+            {user.role === 'owner' ? 'View maintenance, approve major requests, and monitor costs.' : 
+             user.role === 'farmer' ? 'Report problems, request maintenance, assign tasks to Labour, and confirm completion.' : 
+             'Create requests, coordinate work, assign tasks, and monitor progress.'}
+          </p>
         </div>
         <div style={{ display:'flex', gap:8 }}>
           <button className="mt-btn mt-btn-primary"
@@ -202,7 +213,7 @@ export default function MaintenanceManagement() {
           { label:'Open',       value: stats.open        || 0, bg:'#fef3c7', color:'#92400e' },
           { label:'In Progress',value: stats.in_progress || 0, bg:'#ede9fe', color:'#7c3aed' },
           { label:'Resolved',   value: stats.resolved    || 0, bg:'#dcfce7', color:'#15803d' },
-          { label:'Critical',   value: stats.critical    || 0, bg:'#fee2e2', color:'#b91c1c' },
+          { label:'Total Cost', value: '$' + tickets.reduce((s,t) => s + (t.repairCost||0), 0), bg:'#fee2e2', color:'#b91c1c' },
           { label:'Total',      value: tickets.length,         bg:'#dbeafe', color:'#1e40af' },
         ].map(k => (
           <div key={k.label} className="mt-kpi" style={{ background:k.bg }}>
@@ -251,6 +262,13 @@ export default function MaintenanceManagement() {
                 <input type="date" value={form.scheduledFor}
                   onChange={e => setForm(p=>({...p,scheduledFor:e.target.value}))} className="mt-input" />
               </div>
+              {['owner', 'office_manager'].includes(user.role) && (
+                <div className="mt-field">
+                  <label>Maintenance Cost ($)</label>
+                  <input type="number" value={form.repairCost}
+                    onChange={e => setForm(p=>({...p,repairCost:e.target.value}))} className="mt-input" />
+                </div>
+              )}
             </div>
             <div className="mt-form-row">
               <div className="mt-field mt-field-wide">
@@ -309,7 +327,7 @@ export default function MaintenanceManagement() {
             <thead>
               <tr>
                 <th>Title</th><th>Farm</th><th>Category</th><th>Priority</th>
-                <th>Status</th><th>Raised By</th><th>Assigned To</th><th>Scheduled</th><th>Actions</th>
+                <th>Status</th><th>Cost</th><th>Raised By</th><th>Assigned To</th><th>Scheduled</th><th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -330,6 +348,7 @@ export default function MaintenanceManagement() {
                       {STATUSES.map(s => <option key={s} value={s}>{s.replace('_',' ')}</option>)}
                     </select>
                   </td>
+                  <td><strong style={{ color:'#15803d' }}>${tk.repairCost || 0}</strong></td>
                   <td><span>{tk.raisedBy?.name || '—'}</span><div className="mt-sub">{tk.raisedBy?.role}</div></td>
                   <td>
                     {tk.assignedTo
@@ -339,9 +358,21 @@ export default function MaintenanceManagement() {
                   <td>{tk.scheduledFor ? new Date(tk.scheduledFor).toLocaleDateString() : '—'}</td>
                   <td>
                     <button className="mt-btn-icon" onClick={() => handleEdit(tk)} title="Edit">✏️</button>
-                    <button className="mt-btn-icon" title="Assign worker"
-                      onClick={() => { setAssignId(tk._id); setAssignWorker(tk.assignedTo?._id||''); }}>👷</button>
-                    {user.role === 'super_administrator' && (
+                    
+                    {user.role !== 'owner' && (
+                      <button className="mt-btn-icon" title="Assign worker"
+                        onClick={() => { setAssignId(tk._id); setAssignWorker(tk.assignedTo?._id||''); }}>👷</button>
+                    )}
+                    
+                    {user.role === 'owner' && ['open', 'in_progress'].includes(tk.status) && (
+                      <button className="mt-btn-icon" onClick={() => handleStatusChange(tk._id, 'approved')} title="Approve Maintenance">✅</button>
+                    )}
+                    
+                    {user.role === 'farmer' && tk.status === 'resolved' && (
+                      <button className="mt-btn-icon" onClick={() => handleStatusChange(tk._id, 'confirmed')} title="Confirm Completed">✔️</button>
+                    )}
+
+                    {( user?.assignedRole || user?.role ) === 'admin' && (
                       <button className="mt-btn-icon mt-btn-danger" onClick={() => handleDelete(tk._id)} title="Delete">🗑️</button>
                     )}
                   </td>
@@ -377,3 +408,5 @@ export default function MaintenanceManagement() {
     </div>
   );
 }
+
+

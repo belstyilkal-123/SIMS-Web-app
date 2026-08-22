@@ -67,8 +67,8 @@ export default function OfficeAttendance() {
     <div className="op-page">
       <div className="op-header">
         <div>
-          <h2>🗓️ Attendance Overview</h2>
-          <p className="op-subtitle">Monthly attendance summary for payroll calculations.</p>
+          <h2>{user.role === 'owner' ? '👑 Workforce Attendance Reports' : '🗓️ Attendance Overview'}</h2>
+          <p className="op-subtitle">{user.role === 'owner' ? 'Monitor workforce attendance and view monthly reports.' : 'Monthly attendance summary for payroll calculations.'}</p>
         </div>
         <button className="op-btn op-btn-pdf" onClick={handleExport} disabled={summary.length === 0}>
           📄 Export PDF

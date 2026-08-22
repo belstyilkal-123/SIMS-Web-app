@@ -41,7 +41,7 @@ const PORT = process.env.PORT || 5000;
 // ── Security middleware ───────────────────────────────────────
 app.use(helmet());
 app.use(cors({ origin: ALLOWED_ORIGINS, credentials: true }));
-app.use(express.json({ limit: '10kb' }));
+app.use(express.json({ limit: '5mb' }));
 app.use(cookieParser());
 
 // ── Request logging (Morgan) ──────────────────────────────────
@@ -84,6 +84,7 @@ app.use('/api', auditLogger);
 
 app.use('/api/auth',          require('./routes/auth'));
 app.use('/api/auth/magic-link', require('./routes/magicLink'));
+app.use('/api/owner',         require('./routes/ownerStats'));
 app.use('/api/farms',         require('./routes/farms'));
 app.use('/api/devices',       require('./routes/devices'));
 app.use('/api/sensors',       require('./routes/sensors'));
@@ -98,8 +99,11 @@ app.use('/api/attendance',    require('./routes/attendance'));
 app.use('/api/payroll',       require('./routes/payroll'));
 app.use('/api/admin/users',   require('./routes/adminUsers'));
 app.use('/api/maintenance',   require('./routes/maintenance'));
-app.use('/api/billing',       require('./routes/billing'));
-app.use('/api/inventory',     require('./routes/inventory'));
+app.use('/api/expenses',      require('./routes/expenses'));
+app.use('/api/financial-reports', require('./routes/financialReports'));
+app.use('/api/tasks',         require('./routes/tasks'));
+app.use('/api/farm-assignments', require('./routes/farmAssignments'));
+app.use('/api/assignment-requests', require('./routes/assignmentRequests'));
 
 // Centralized error handler (must be after routes)
 app.use(require('./middleware/errorHandler'));
@@ -179,9 +183,10 @@ app.post('/api/esp8266/data', deviceAuth, async (req, res) => {
     if (sensors && Array.isArray(sensors)) {
       for (const s of sensors) {
         const dataPoint = new SensorData({
-          deviceId: device._id,
+          farmId:     device.farmId, // NEW: enables fast farm-level dashboard queries
+          deviceId:   device._id,
           sensorType: s.type, // e.g. moisture, pH, temperature, humidity, tankLevel
-          value: s.value
+          value:      s.value
         });
         await dataPoint.save();
 
@@ -200,10 +205,11 @@ app.post('/api/esp8266/data', deviceAuth, async (req, res) => {
       const lastLog = await IrrigationLog.findOne({ deviceId: device._id }).sort({ timestamp: -1 });
       if (!lastLog || lastLog.status !== pumpStatus) {
         const newLog = new IrrigationLog({
-          deviceId: device._id,
-          status: pumpStatus, // 'ON' or 'OFF'
-          triggeredBy: lastLog ? 'auto' : 'manual', // guess mode
-          timestamp: new Date()
+          farmId:      device.farmId,      // NEW: normalized reference
+          deviceId:    device._id,
+          status:      pumpStatus,          // 'ON' or 'OFF'
+          triggeredBy: lastLog ? 'auto' : 'manual',
+          timestamp:   new Date()
         });
         await newLog.save();
       }

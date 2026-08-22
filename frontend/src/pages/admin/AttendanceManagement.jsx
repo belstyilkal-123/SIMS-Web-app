@@ -187,8 +187,8 @@ export default function AttendanceManagement() {
   return (
     <div className="ap-page">
       <div className="ap-header">
-        <h2>🗓️ Attendance Management</h2>
-        <p className="ap-subtitle">Track daily attendance and view monthly summaries.</p>
+        <h2>{user.role === 'office_manager' ? '🏢 Manage Attendance' : user.role === 'farmer' ? '🌱 Labour Attendance' : '🗓️ Attendance Management'}</h2>
+        <p className="ap-subtitle">{user.role === 'office_manager' ? 'View records, correct attendance, and generate reports.' : user.role === 'farmer' ? 'Record and confirm attendance for assigned labour.' : 'Track daily attendance and view monthly summaries.'}</p>
       </div>
 
       {/* ── Controls ──────────────────────────────────────────── */}

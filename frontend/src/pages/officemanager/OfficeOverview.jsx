@@ -19,23 +19,32 @@ export default function OfficeOverview() {
   const [loading, setLoading]     = useState(true);
 
   useEffect(() => {
-    axios.get(`${API_URL}/api/farms`, cfg).then(r => {
-      setFarms(r.data);
-      if (r.data.length > 0) setSelectedFarm(r.data[0]._id);
-    });
+    axios.get(`${API_URL}/api/farms`, cfg)
+      .then(r => {
+        setFarms(r.data || []);
+        if (r.data && r.data.length > 0) {
+          setSelectedFarm(r.data[0]._id);
+        } else {
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to fetch farms:', err);
+        setLoading(false);
+      });
   }, []);
 
   useEffect(() => {
     if (!selectedFarm) return;
     setLoading(true);
     Promise.all([
-      axios.get(`${API_URL}/api/attendance?farmId=${selectedFarm}&date=${today}`, cfg),
-      axios.get(`${API_URL}/api/attendance/summary?farmId=${selectedFarm}&month=${currentMonth}`, cfg),
-      axios.get(`${API_URL}/api/payroll?farmId=${selectedFarm}&period=${currentMonth}`, cfg),
+      axios.get(`${API_URL}/api/attendance?farmId=${selectedFarm}&date=${today}`, cfg).catch(() => ({ data: [] })),
+      axios.get(`${API_URL}/api/attendance/summary?farmId=${selectedFarm}&month=${currentMonth}`, cfg).catch(() => ({ data: [] })),
+      axios.get(`${API_URL}/api/payroll?farmId=${selectedFarm}&period=${currentMonth}`, cfg).catch(() => ({ data: [] })),
     ]).then(([att, sum, pay]) => {
-      setTodayAtt(att.data);
-      setMonthlySummary(sum.data);
-      const records = pay.data;
+      setTodayAtt(att.data || []);
+      setMonthlySummary(sum.data || []);
+      const records = pay.data || [];
       setPayrollStats({
         total:   records.reduce((s,r) => s + (r.netPay||0), 0),
         pending: records.filter(r => r.paymentStatus==='pending').reduce((s,r) => s+(r.netPay||0), 0),

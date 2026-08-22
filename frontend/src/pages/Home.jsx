@@ -1,5 +1,14 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useContext } from 'react';
+import { Link, Navigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
+
+const ROLE_HOME = {
+  owner:          '/owner/dashboard',
+  admin:          '/admin/dashboard',
+  office_manager: '/office/overview',
+  farmer:         '/dashboard',
+  labor:          '/labour/dashboard',
+};
 
 const T = {
   en: {
@@ -39,10 +48,18 @@ const features = [
 ];
 
 const Home = () => {
+  const { user, loading } = useContext(AuthContext);
   const [lang, setLang] = useState(localStorage.getItem('preferredLanguage') || 'en');
   const t = T[lang] || T.en;
 
-  const changeLang = (l) => { setLang(l); localStorage.setItem('preferredLanguage', l); };
+  const changeLang = (l) => { setLang(l); localStorage.setItem('preferredLanguage', l); if (l === 'am') { document.cookie = 'googtrans=/en/am; path=/'; document.cookie = 'googtrans=/en/am; path=/; domain=' + window.location.hostname; } else { document.cookie = 'googtrans=/en/en; path=/'; document.cookie = 'googtrans=/en/en; path=/; domain=' + window.location.hostname; } window.location.reload(); };
+
+  // ── Auto-redirect logged-in users to their dashboard ─────────────────────
+  if (!loading && user) {
+    const role = user.assignedRole || user.role;
+    const dest = ROLE_HOME[role] || '/dashboard';
+    return <Navigate to={dest} replace />;
+  }
 
   return (
     <div style={{

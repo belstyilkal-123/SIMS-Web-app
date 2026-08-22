@@ -8,7 +8,7 @@ const { protect, authorize, isAdmin } = require('../middleware/authMiddleware');
 // @route   POST /api/irrigation/manual
 // @desc    Trigger pump manually
 // @access  Private
-router.post('/manual', protect, authorize('super_administrator', 'office_manager', 'farmer', 'labor'), async (req, res) => {
+router.post('/manual', protect, authorize('owner', 'admin', 'office_manager', 'farmer', 'labor'), async (req, res) => {
   try {
     const { deviceId, action } = req.body;
     if (!['PUMP_ON', 'PUMP_OFF', 'BUZZER_ON', 'BUZZER_OFF'].includes(action)) {
@@ -17,10 +17,10 @@ router.post('/manual', protect, authorize('super_administrator', 'office_manager
     const device = await Device.findById(deviceId).populate('farmId', 'ownerId');
     if (!device) return res.status(404).json({ error: 'Device not found' });
 
-    const isSA = req.user.role === 'super_administrator';
-    const isOM = req.user.role === 'office_manager';
-    const isOwner = device.farmId?.ownerId?.toString() === req.user._id.toString();
-    if (!isSA && !isOM && !isOwner) {
+    const role = req.user.assignedRole || req.user.role;
+    const isPrivileged = ['owner', 'admin', 'office_manager'].includes(role);
+    const isFarmOwner = device.farmId?.ownerId?.toString() === req.user._id.toString();
+    if (!isPrivileged && !isFarmOwner) {
       return res.status(403).json({ error: 'You do not have access to this device.' });
     }
     
@@ -53,4 +53,5 @@ router.post('/manual', protect, authorize('super_administrator', 'office_manager
 });
 
 module.exports = router;
+
 

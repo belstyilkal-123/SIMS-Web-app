@@ -1,138 +1,145 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
+import GoogleTranslate from './GoogleTranslate';
+
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import { API_URL } from '../config/api';
 import './Layout.css';
 
 /* ──────────────────────────────────────────────────────────────────────────
-   ROLE META  –  badge colour, icon, display names
+   ROLE META  –  badge colour, icon, display names (5 roles)
 ────────────────────────────────────────────────────────────────────────── */
 const ROLE_META = {
-  super_administrator: { en: 'Super Administrator', am: 'ሱፐር አስተዳዳሪ',    color:'#b91c1c', bg:'#fee2e2', icon:'🛡️' },
-  office_manager:      { en: 'Office Manager',      am: 'ቢሮ አስተዳዳሪ',      color:'#7c3aed', bg:'#ede9fe', icon:'💼' },
-  farmer:              { en: 'Farmer',              am: 'አርሶ አደር',         color:'#15803d', bg:'#dcfce7', icon:'🌾' },
-  labor:               { en: 'Labour Worker',       am: 'ሠራተኛ',            color:'#1d4ed8', bg:'#dbeafe', icon:'👷' },
+  owner:          { en: 'Investor / Owner', am: 'ባለቤት / ባለሃብት',  color: '#92400e', bg: '#fef3c7', icon: '👑' },
+  admin:          { en: 'Administrator',    am: 'አስተዳዳሪ',          color: '#b91c1c', bg: '#fee2e2', icon: '🛡️' },
+  office_manager: { en: 'Office Manager',   am: 'ቢሮ አስተዳዳሪ',      color: '#7c3aed', bg: '#ede9fe', icon: '💼' },
+  farmer:         { en: 'Farmer',           am: 'አርሶ አደር',         color: '#15803d', bg: '#dcfce7', icon: '🌾' },
+  labor:          { en: 'Labour Worker',    am: 'ሠራተኛ',            color: '#1d4ed8', bg: '#dbeafe', icon: '👷' },
 };
 
 /* ──────────────────────────────────────────────────────────────────────────
-   NAVIGATION  –  each group declares which roles can see it
-   Items can also have a `roles` override for per-item visibility
+   NAVIGATION  –  5-role matrix (spec §63)
+   Each group declares which roles can see it.
+   Items can also have a `roles` override for per-item visibility.
 ────────────────────────────────────────────────────────────────────────── */
 const NAV = {
   en: [
-    /* ── OVERVIEW ───────────────────────────────────────────────────── */
     {
       groupLabel: 'Overview',
-      roles: ['super_administrator','office_manager','farmer','labor'],
+      roles: ['owner','admin','office_manager','farmer','labor'],
       items: [
-        { path:'/dashboard',       icon:'📊', label:'Dashboard',      roles:['super_administrator','farmer'] },
-        { path:'/office/overview', icon:'📊', label:'Dashboard',      roles:['office_manager'] },
-        { path:'/labour/dashboard',icon:'🧑‍🌾',label:'My Dashboard',   roles:['labor'] },
-        { path:'/notifications',   icon:'🔔', label:'Notifications',   roles:['super_administrator','office_manager','farmer','labor'] },
+        { path:'/owner/dashboard',  icon:'👑', label:'Dashboard',    roles:['owner'] },
+        { path:'/admin/dashboard',  icon:'🛡️', label:'Dashboard',      roles:['admin'] },
+        { path:'/office/overview',  icon:'📊', label:'Dashboard',            roles:['office_manager'] },
+        { path:'/dashboard',        icon:'📊', label:'Dashboard',       roles:['farmer'] },
+        { path:'/labour/dashboard', icon:'🧑‍🌾',label:'Dashboard',         roles:['labor'] },
+        { path:'/notifications',    icon:'🔔', label:'Notifications',        roles:['owner','admin','office_manager','farmer','labor'] },
       ],
     },
-
-    /* ── FARM OPERATIONS  (Super Admin + Farmer) ─────────────────────── */
+    /* ── OWNER: Business & Finance ──────────────────────────── */
     {
-      groupLabel: 'Farm Operations',
-      roles: ['super_administrator','farmer'],
+      groupLabel: 'Business',
+      roles: ['owner'],
       items: [
-        { path:'/farm-control', icon:'🌾🚰', label:'Farm & Irrigation Management' },
-        { path:'/history',      icon:'📈',   label:'Analytics & History' },
+        { path:'/expenses',          icon:'✅', label:'Expense Approvals' },
+        { path:'/reports/financial', icon:'📊', label:'Finance' },
+        { path:'/owner/farms',       icon:'🌾', label:'Farms' },
+        { path:'/owner/approvals',   icon:'✅', label:'Labour Approval' },
+          { path:'/owner/attendance',  icon:'🗓️', label:'Attendance' },
+        { path:'/tasks',             icon:'📋', label:'Tasks' },
+          { path:'/farm-assignments',  icon:'🧑‍🌾', label:'Farm Assignments' },
+        { path:'/audit-logs',        icon:'📝', label:'Audits' },
       ],
     },
-
-    /* ── DEVICES  (Super Admin + Farmer) ─────────────────────────────── */
-    {
-      groupLabel: 'Devices & Sensors',
-      roles: ['super_administrator','farmer'],
-      items: [
-        { path:'/devices', icon:'🛠️', label:'Device Management' },
-      ],
-    },
-
-    /* ── PEOPLE & TASKS  (Super Admin + Office Manager) ──────────────── */
-    {
-      groupLabel: 'People & Tasks',
-      roles: ['super_administrator','office_manager'],
-      items: [
-        { path:'/activities',       icon:'📋', label:'Assign Activities' },
-        { path:'/maintenance',      icon:'🔧', label:'Maintenance Tickets' },
-        { path:'/inventory',        icon:'📦', label:'Inventory',            roles:['office_manager'] },
-        { path:'/office/attendance',icon:'🗓️', label:'Attendance Overview',  roles:['office_manager'] },
-        { path:'/admin/attendance', icon:'🗓️', label:'Attendance Management',roles:['super_administrator'] },
-      ],
-    },
-
-    /* ── USER MANAGEMENT  (Super Admin only) ─────────────────────────── */
-    {
-      groupLabel: 'User Management',
-      roles: ['super_administrator'],
-      items: [
-        { path:'/admin/users', icon:'👥', label:'User Accounts' },
-      ],
-    },
-
-    /* ── PAYROLL & FINANCE  (Super Admin + Office Manager) ───────────── */
-    {
-      groupLabel: 'Payroll & Finance',
-      roles: ['super_administrator','office_manager'],
-      items: [
-        { path:'/payroll',  icon:'💰', label:'Payroll Management' },
-        { path:'/billing',  icon:'🧾', label:'Invoice Management' },
-      ],
-    },
-
-    /* ── REPORTS  (Super Admin + Farmer + Office Manager) ────────────── */
-    {
-      groupLabel: 'Reports',
-      roles: ['super_administrator','office_manager','farmer'],
-      items: [
-        { path:'/farmer/reports',   icon:'📑', label:'Farm Reports',          roles:['super_administrator','farmer'] },
-        { path:'/farmer/labour',    icon:'👷', label:'Labour Attachments',    roles:['super_administrator','farmer'] },
-        { path:'/maintenance/farm', icon:'🔧', label:'Maintenance & Support', roles:['farmer'] },
-        { path:'/billing/my',       icon:'🧾', label:'My Bills & Payments',   roles:['farmer'] },
-      ],
-    },
-
-    /* ── SYSTEM  (Super Admin only) ──────────────────────────────────── */
+    /* ── ADMIN: System & Security ───────────────────────────── */
     {
       groupLabel: 'System',
-      roles: ['super_administrator'],
+      roles: ['admin'],
       items: [
-        { path:'/inventory',  icon:'📦', label:'Inventory' },
-        { path:'/audit-logs', icon:'📝', label:'Audit Logs' },
+        { path:'/admin/users',      icon:'👥', label:'Users' },
+        { path:'/devices',          icon:'🛠️', label:'Devices' },
+        { path:'/audit-logs',       icon:'📝', label:'Audits' },
       ],
     },
-
-    /* ── MY WORK  (Labour only) ──────────────────────────────────────── */
+    /* ── ADMIN: Farm view-only ──────────────────────────────── */
     {
-      groupLabel: 'My Work',
+      groupLabel: 'Overview',
+      roles: ['admin'],
+      items: [
+        { path:'/farm-control', icon:'🌾🚰', label:'Farms' },
+        { path:'/history',      icon:'📈',   label:'Analytics' },
+      ],
+    },
+    /* ── FARMER: Farm Operations ─────────────────────────────── */
+    {
+      groupLabel: 'Operations',
+      roles: ['farmer'],
+      items: [
+        { path:'/farm-control', icon:'🌾🚰', label:'Farms' },
+        { path:'/history',      icon:'📈',   label:'Analytics' },
+      ],
+    },
+    /* ── OFFICE MANAGER: People & Tasks ─────────────────────── */
+    {
+      groupLabel: 'People',
+      roles: ['office_manager'],
+      items: [
+        { path:'/tasks',        icon:'📋', label:'Tasks' },
+          { path:'/farm-assignments',  icon:'🧑‍🌾', label:'Farm Assignments' },
+        { path:'/maintenance',       icon:'🔧', label:'Maintenance' },
+        { path:'/office/attendance', icon:'🗓️', label:'Attendance' },
+      ],
+    },
+    /* ── OFFICE MANAGER: Finance ─────────────────────────────── */
+    {
+      groupLabel: 'Finance',
+      roles: ['office_manager'],
+      items: [
+        { path:'/payroll',            icon:'💰', label:'Payroll' },
+        { path:'/expenses',           icon:'💵', label:'Expenses' },
+        { path:'/reports/financial',  icon:'📊', label:'Finance' },
+      ],
+    },
+    /* ── FARMER: Reports ─────────────────────────────────────── */
+    {
+      groupLabel: 'Reports',
+      roles: ['farmer'],
+      items: [
+          { path:'/farmer/reports',   icon:'📑', label:'Reports' },
+          { path:'/farmer/labour',    icon:'👷', label:'Labour' },
+          { path:'/tasks',            icon:'📋', label:'Tasks' },
+          { path:'/maintenance', icon:'🔧', label:'Maintenance' },
+          { path:'/farmer/attendance',icon:'🗓️', label:'Attendance' },
+        { path:'/expenses',         icon:'💵', label:'Expenses' },
+      ],
+    },
+    /* ── LABOUR: My Work ────────────────────────────────────── */
+    {
+      groupLabel: 'Work',
       roles: ['labor'],
       items: [
-        { path:'/labour/activities',  icon:'📋', label:'My Tasks' },
-        { path:'/labour/attendance',  icon:'🗓️', label:'My Attendance' },
-        { path:'/maintenance/labour', icon:'🔧', label:'Maintenance' },
+        { path:'/labour/tasks',  icon:'📋', label:'Tasks' },
+        { path:'/labour/attendance',  icon:'🗓️', label:'Attendance' },
+        { path:'/maintenance', icon:'🔧', label:'Maintenance' },
       ],
     },
 
-    /* ── MY PAY  (Labour only) ───────────────────────────────────────── */
+    /* ── LABOUR: My Pay ─────────────────────────────────────── */
     {
-      groupLabel: 'My Pay',
+      groupLabel: 'Pay',
       roles: ['labor'],
       items: [
-        { path:'/labour/payslips', icon:'💵', label:'My Payslips' },
+        { path:'/labour/payslips', icon:'💵', label:'Payslips' },
       ],
     },
-
-    /* ── HELP  (All roles) ───────────────────────────────────────────── */
+    /* ── HELP (All roles) ───────────────────────────────────── */
     {
-      groupLabel: 'Help & Support',
-      roles: ['super_administrator','office_manager','farmer','labor'],
+      groupLabel: 'Support',
+      roles: ['owner','admin','office_manager','farmer','labor'],
       items: [
-        { path:'/about',   icon:'❓', label:'About System' },
-        { path:'/contact', icon:'📞', label:'Contact Support' },
+        { path:'/about',   icon:'❓', label:'About' },
+        { path:'/contact', icon:'📞', label:'Contact' },
       ],
     },
   ],
@@ -140,95 +147,110 @@ const NAV = {
   am: [
     {
       groupLabel: 'አጠቃላይ',
-      roles: ['super_administrator','office_manager','farmer','labor'],
+      roles: ['owner','admin','office_manager','farmer','labor'],
       items: [
-        { path:'/dashboard',       icon:'📊', label:'ዳሽቦርድ',         roles:['super_administrator','farmer'] },
-        { path:'/office/overview', icon:'📊', label:'ዳሽቦርድ',         roles:['office_manager'] },
-        { path:'/labour/dashboard',icon:'🧑‍🌾',label:'ዳሽቦርዴ',        roles:['labor'] },
-        { path:'/notifications',   icon:'🔔', label:'ማሳወቂያዎች',      roles:['super_administrator','office_manager','farmer','labor'] },
+        { path:'/owner/dashboard',  icon:'👑', label:'ዳሽቦርድ',    roles:['owner'] },
+        { path:'/admin/dashboard',  icon:'🛡️', label:'ዳሽቦርድ',   roles:['admin'] },
+        { path:'/office/overview',  icon:'📊', label:'ዳሽቦርድ',           roles:['office_manager'] },
+        { path:'/dashboard',        icon:'📊', label:'ዳሽቦርድ',     roles:['farmer'] },
+        { path:'/labour/dashboard', icon:'🧑‍🌾',label:'ዳሽቦርድ',          roles:['labor'] },
+        { path:'/notifications',    icon:'🔔', label:'ማሳወቂያዎች',        roles:['owner','admin','office_manager','farmer','labor'] },
+      ],
+    },
+      {
+        groupLabel: 'ስራዎች',
+        roles: ['owner'],
+        items: [
+          { path:'/expenses',          icon:'✅', label:'Expense Approvals' },
+          { path:'/reports/financial', icon:'📊', label:'ፋይናንስ' },
+          { path:'/owner/farms',       icon:'🌾', label:'እርሻ' },
+          { path:'/owner/approvals',   icon:'✅', label:'ማረጋገጫዎች' },
+            { path:'/owner/attendance',  icon:'🗓️', label:'መገኘት' },
+          { path:'/tasks',             icon:'📋', label:'ተግባራት' },
+            { path:'/farm-assignments',  icon:'🧑‍🌾', label:'የእርሻ ምደባ' },
+          { path:'/maintenance',       icon:'🔧', label:'ጥገና' },
+          { path:'/audit-logs',        icon:'📝', label:'ምዝገቦች' },
+        ],
+      },
+    {
+      groupLabel: 'ስርዓት',
+      roles: ['admin'],
+      items: [
+        { path:'/admin/users',      icon:'👥', label:'ተጠቃሚዎች' },
+        { path:'/devices',          icon:'🛠️', label:'መሣሪያዎች' },
+        { path:'/audit-logs',       icon:'📝', label:'ምዝገቦች' },
       ],
     },
     {
-      groupLabel: 'የእርሻ ስራዎች',
-      roles: ['super_administrator','farmer'],
+      groupLabel: 'አጠቃላይ',
+      roles: ['admin'],
       items: [
-        { path:'/farm-control', icon:'🌾🚰', label:'እርሻ እና የመስኖ አስተዳደር' },
-        { path:'/history',      icon:'📈',   label:'ትንታኔ እና ታሪክ' },
+        { path:'/farm-control', icon:'🌾🚰', label:'እርሻ' },
+        { path:'/history',      icon:'📈',   label:'ትንታኔ' },
       ],
     },
     {
-      groupLabel: 'መሣሪያዎች',
-      roles: ['super_administrator','farmer'],
+      groupLabel: 'ስራዎች',
+      roles: ['farmer'],
       items: [
-        { path:'/devices', icon:'🛠️', label:'የመሣሪያ አስተዳደር' },
+        { path:'/farm-control', icon:'🌾🚰', label:'እርሻ' },
+        { path:'/history',      icon:'📈',   label:'ትንታኔ' },
       ],
     },
     {
-      groupLabel: 'ሰዎች እና ተግባሮች',
-      roles: ['super_administrator','office_manager'],
+      groupLabel: 'ሰዎች',
+      roles: ['office_manager'],
       items: [
-        { path:'/activities',       icon:'📋', label:'ሥራ ማዛወሪያ' },
-        { path:'/maintenance',      icon:'🔧', label:'የጥገና ትኬቶች' },
-        { path:'/inventory',        icon:'📦', label:'ክምችት',                  roles:['office_manager'] },
-        { path:'/office/attendance',icon:'🗓️', label:'የመገኘት አጠቃላይ',         roles:['office_manager'] },
-        { path:'/admin/attendance', icon:'🗓️', label:'የመገኘት አስተዳደር',         roles:['super_administrator'] },
+        { path:'/tasks',        icon:'📋', label:'ተግባራት' },
+          { path:'/farm-assignments',  icon:'🧑‍🌾', label:'የእርሻ ምደባ' },
+        { path:'/maintenance',       icon:'🔧', label:'ጥገና' },
+        { path:'/office/attendance', icon:'🗓️', label:'መገኘት' },
       ],
     },
     {
-      groupLabel: 'የተጠቃሚ አስተዳደር',
-      roles: ['super_administrator'],
+      groupLabel: 'ፋይናንስ',
+      roles: ['office_manager'],
       items: [
-        { path:'/admin/users', icon:'👥', label:'የተጠቃሚ ሒሳቦች' },
-      ],
-    },
-    {
-      groupLabel: 'ደሞዝ እና ፋይናንስ',
-      roles: ['super_administrator','office_manager'],
-      items: [
-        { path:'/payroll', icon:'💰', label:'የደሞዝ አስተዳደር' },
-        { path:'/billing', icon:'🧾', label:'የክፍያ አስተዳደር' },
+        { path:'/payroll',            icon:'💰', label:'ደሞዝ' },
+        { path:'/expenses',           icon:'💵', label:'ወጪዎች' },
+        { path:'/reports/financial',  icon:'📊', label:'ፋይናንስ' },
       ],
     },
     {
       groupLabel: 'ሪፖርቶች',
-      roles: ['super_administrator','office_manager','farmer'],
+      roles: ['farmer'],
       items: [
-        { path:'/farmer/reports',   icon:'📑', label:'የእርሻ ሪፖርቶች',    roles:['super_administrator','farmer'] },
-        { path:'/farmer/labour',    icon:'👷', label:'ሠራተኞች',          roles:['super_administrator','farmer'] },
-        { path:'/maintenance/farm', icon:'🔧', label:'ጥገና እና ድጋፍ',    roles:['farmer'] },
-        { path:'/billing/my',       icon:'🧾', label:'ክፍያዎቼ',           roles:['farmer'] },
+        { path:'/farmer/reports',   icon:'📑', label:'ሪፖርቶች' },
+        { path:'/farmer/labour',    icon:'👷', label:'ሠራተኞች' },
+        { path:'/tasks',            icon:'📋', label:'ተግባራት' },
+        { path:'/maintenance', icon:'🔧', label:'ጥገና' },
+        { path:'/farmer/attendance',icon:'🗓️', label:'መገኘት' },
+        { path:'/expenses',         icon:'💵', label:'ወጪዎች' },
       ],
     },
     {
-      groupLabel: 'ስርዓት',
-      roles: ['super_administrator'],
-      items: [
-        { path:'/inventory',  icon:'📦', label:'ክምችት' },
-        { path:'/audit-logs', icon:'📝', label:'የስርዓት ምዝግብ' },
-      ],
-    },
-    {
-      groupLabel: 'ሥራዬ',
+      groupLabel: 'ስራ',
       roles: ['labor'],
       items: [
-        { path:'/labour/activities',  icon:'📋', label:'ተግባሮቼ' },
-        { path:'/labour/attendance',  icon:'🗓️', label:'መገኘቴ' },
-        { path:'/maintenance/labour', icon:'🔧', label:'ጥገና' },
+        { path:'/labour/tasks',  icon:'📋', label:'ተግባራት' },
+        { path:'/labour/attendance',  icon:'🗓️', label:'መገኘት' },
+        { path:'/maintenance', icon:'🔧', label:'ጥገና' },
       ],
     },
+
     {
-      groupLabel: 'ክፍያዬ',
+      groupLabel: 'ክፍያ',
       roles: ['labor'],
       items: [
-        { path:'/labour/payslips', icon:'💵', label:'የደሞዝ ወረቀቶቼ' },
+        { path:'/labour/payslips', icon:'💵', label:'ደሞዝ' },
       ],
     },
     {
-      groupLabel: 'እርዳታ',
-      roles: ['super_administrator','office_manager','farmer','labor'],
+      groupLabel: 'ድጋፍ',
+      roles: ['owner','admin','office_manager','farmer','labor'],
       items: [
-        { path:'/about',   icon:'❓', label:'ስለ ስርዓቱ' },
-        { path:'/contact', icon:'📞', label:'ድጋፍ' },
+        { path:'/about',   icon:'❓', label:'ስለእኛ' },
+        { path:'/contact', icon:'📞', label:'አግኙን' },
       ],
     },
   ],
@@ -240,7 +262,7 @@ const BOTTOM = {
   am: { path:'/settings', icon:'⚙️', label:'መገለጫ እና ቅንብሮች' },
 };
 
-/* Filter helpers */
+/* ── Filter helpers ──────────────────────────────────────────── */
 const filterItems = (items, role) =>
   items.filter(i => !i.roles || i.roles.includes(role));
 
@@ -250,9 +272,9 @@ const buildNav = (groups, role) =>
     .map(g => ({ ...g, items: filterItems(g.items, role) }))
     .filter(g => g.items.length > 0);
 
-/* ──────────────────────────────────────────────────────────────────────────
+/* ══════════════════════════════════════════════════════════════
    LAYOUT COMPONENT
-────────────────────────────────────────────────────────────────────────── */
+══════════════════════════════════════════════════════════════ */
 const Layout = () => {
   const { user, logout, loading, updateProfile } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -263,23 +285,9 @@ const Layout = () => {
   const [profileOpen, setProfileOpen]           = useState(false);
   const [refreshing, setRefreshing]             = useState(false);
 
-  /* Fetch weather chip */
-  useEffect(() => {
-    axios.get(`${API_URL}/api/weather?lat=11.5742&lon=37.3614`)
-      .then(r => {
-        if (!r.data?.unavailable)
-          setWeatherChip({
-            temp: r.data.temp != null ? `${r.data.temp}°C` : '--',
-            emoji: r.data.emoji || '⛅',
-            condition: r.data.condition || '',
-          });
-      }).catch(() => {});
-  }, []);
-
   useEffect(() => { if (user?.language) setLanguage(user.language); }, [user?.language]);
   useEffect(() => { if (!loading && !user) navigate('/login'); }, [user, loading, navigate]);
 
-  /* Close dropdown on outside click */
   useEffect(() => {
     const h = () => setProfileOpen(false);
     if (profileOpen) document.addEventListener('click', h);
@@ -287,27 +295,23 @@ const Layout = () => {
   }, [profileOpen]);
 
   if (loading) return (
-    <div className="si-loading-screen">
-      <div className="si-loading-logo">
-        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-          <circle cx="24" cy="24" r="22" stroke="#10b981" strokeWidth="4" strokeDasharray="8 4"/>
-          <path d="M24 8C24 8 18 18 18 26c0 4.4 2.7 8 6 8s6-3.6 6-8c0-8-6-18-6-18Z" fill="#10b981"/>
-        </svg>
+      <div className="si-loading-screen">
+        <div className="si-loading-logo">
+          <img src="/logo.png" alt="Loading Logo" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+        </div>
+        <p>Loading SmartIrrigate…</p>
       </div>
-      <p>Loading SmartIrrigate SIMS…</p>
-    </div>
-  );
+    );
   if (!user) return null;
 
   const isAm      = language === 'am';
-  const role      = user?.role || 'labor';
+  const role      = user.assignedRole || user.role || 'labor';
   const meta      = ROLE_META[role] || ROLE_META.labor;
   const roleLabel = isAm ? meta.am : meta.en;
 
   const navGroups  = buildNav(isAm ? NAV.am : NAV.en, role);
   const bottomItem = isAm ? BOTTOM.am : BOTTOM.en;
 
-  /* Page title from active route */
   const allItems  = navGroups.flatMap(g => g.items);
   const active    = allItems.find(i => i.path === location.pathname)
                  || (location.pathname === '/settings' ? bottomItem : null);
@@ -326,17 +330,12 @@ const Layout = () => {
     } catch {}
   };
 
-  /* Reload the current page data without a full browser refresh */
-  const handleRefresh = () => {
+      const handleRefresh = () => {
     if (refreshing) return;
     setRefreshing(true);
-    // Navigate to a blank route then back — forces all useEffect hooks to re-run
     const current = location.pathname;
     navigate('/');
-    setTimeout(() => {
-      navigate(current);
-      setRefreshing(false);
-    }, 350);
+    setTimeout(() => { navigate(current); setRefreshing(false); }, 350);
   };
 
   return (
@@ -345,27 +344,14 @@ const Layout = () => {
       {/* ── TOP HEADER ──────────────────────────────────────────── */}
       <header className="si-topbar">
         <div className="si-topbar-left">
-          <button
-            className="si-collapse-btn"
-            onClick={() => setSidebarCollapsed(v => !v)}
-            title="Toggle sidebar"
-            aria-label="Toggle sidebar">
+          <button className="si-collapse-btn" onClick={() => setSidebarCollapsed(v => !v)}
+            title="Toggle sidebar" aria-label="Toggle sidebar">
             <span /><span /><span />
           </button>
           <div className="si-brand">
-            <svg className="si-brand-icon" viewBox="0 0 40 50" fill="none">
-              <path d="M20 2C20 2 4 22 4 33c0 9.4 7.2 15 16 15s16-5.6 16-15c0-11-16-31-16-31Z" fill="url(#dg)"/>
-              <ellipse cx="14" cy="30" rx="4" ry="6" fill="rgba(255,255,255,0.35)" transform="rotate(-20 14 30)"/>
-              <defs>
-                <linearGradient id="dg" x1="4" y1="2" x2="36" y2="48" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#34d399"/>
-                  <stop offset="100%" stopColor="#059669"/>
-                </linearGradient>
-              </defs>
-            </svg>
-            <div className="si-brand-text">
+              <img src="/logo.png" alt="Logo" className="si-brand-icon" style={{ width: '32px', height: '32px', objectFit: 'contain', borderRadius: '4px' }} />
+              <div className="si-brand-text">
               <span className="si-brand-name">SmartIrrigate</span>
-              <span className="si-brand-sub">SIMS v2.5</span>
             </div>
           </div>
         </div>
@@ -375,19 +361,21 @@ const Layout = () => {
         </div>
 
         <div className="si-topbar-right">
-          {/* Alerts link */}
+          {/* Google Translate Dropdown */}
+          
+          {/* Alerts */}
           <Link to="/notifications" className="si-chip si-chip-alert">
             <span>🔔</span>
             <span>{isAm ? 'ማሳወቂያ' : 'Alerts'}</span>
           </Link>
 
-          {/* Refresh button */}
+          {/* Refresh */}
           <button
             className={`si-refresh-btn ${refreshing ? 'spinning' : ''}`}
             onClick={handleRefresh}
             title={isAm ? 'ዳግም ጫን' : 'Refresh page'}
             aria-label="Refresh page"
-            style={{ position:'relative' }}>
+            style={{ position: 'relative' }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
               strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M23 4v6h-6"/>
@@ -397,30 +385,20 @@ const Layout = () => {
           </button>
 
           {/* Language toggle */}
-          <div className="si-lang-toggle" role="group" aria-label="Language">
-            <button
-              className={language === 'en' ? 'active' : ''}
-              onClick={() => handleLangChange('en')}
-              aria-pressed={language === 'en'}>EN</button>
-            <button
-              className={language === 'am' ? 'active' : ''}
-              onClick={() => handleLangChange('am')}
-              aria-pressed={language === 'am'}>አማ</button>
-          </div>
-
           {/* Profile dropdown */}
-          <div
-            className="si-profile-wrap"
-            onClick={e => { e.stopPropagation(); setProfileOpen(v => !v); }}>
+          {/* Google Translate Widget */}
+            <GoogleTranslate />
+            {/* Profile dropdown */}
+            <div className="si-profile-wrap" onClick={e => { e.stopPropagation(); setProfileOpen(v => !v); }}>
             <div className="si-profile-btn">
               <div className="si-avatar">{(user.name || 'U').charAt(0).toUpperCase()}</div>
               <div className="si-profile-info">
                 <span className="si-profile-name">{user.name || 'User'}</span>
                 <span style={{
-                  display:'inline-flex', alignItems:'center', gap:3,
-                  fontSize:'0.65rem', fontWeight:700, padding:'1px 7px',
-                  borderRadius:20, marginTop:2,
-                  background:meta.bg, color:meta.color,
+                  display: 'inline-flex', alignItems: 'center', gap: 3,
+                  fontSize: '0.65rem', fontWeight: 700, padding: '1px 7px',
+                  borderRadius: 20, marginTop: 2,
+                  background: meta.bg, color: meta.color,
                 }}>
                   {meta.icon} {roleLabel}
                 </span>
@@ -451,15 +429,15 @@ const Layout = () => {
           <div className="si-sidebar-inner">
 
             {/* Role context banner */}
-            <div className="si-role-banner" style={{ background:meta.bg, borderBottom:`2px solid ${meta.color}22` }}>
-              <span style={{ fontSize:'1.1rem' }}>{meta.icon}</span>
+            <div className="si-role-banner" style={{ background: meta.bg, borderBottom: `2px solid ${meta.color}22` }}>
+              <span style={{ fontSize: '1.1rem' }}>{meta.icon}</span>
               <div>
-                <div style={{ fontSize:'0.7rem', fontWeight:700, color:meta.color,
-                  textTransform:'uppercase', letterSpacing:'0.05em' }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: meta.color,
+                  textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   {roleLabel}
                 </div>
-                <div style={{ fontSize:'0.65rem', color:'var(--text-muted)', marginTop:1,
-                  maxWidth:140, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: 1,
+                  maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {user.name}
                 </div>
               </div>
@@ -471,9 +449,7 @@ const Layout = () => {
                 <div key={group.groupLabel} className="si-nav-group">
                   <span className="si-nav-group-label">{group.groupLabel}</span>
                   {group.items.map(item => (
-                    <Link
-                      key={item.path}
-                      to={item.path}
+                    <Link key={item.path} to={item.path}
                       className={`si-nav-item ${location.pathname === item.path ? 'active' : ''}`}
                       title={sidebarCollapsed ? item.label : ''}>
                       <span className="si-nav-icon">{item.icon}</span>
@@ -487,17 +463,14 @@ const Layout = () => {
 
             {/* Bottom: Settings + Logout */}
             <div className="si-sidebar-bottom">
-              <Link
-                to={bottomItem.path}
+              <Link to={bottomItem.path}
                 className={`si-nav-item ${location.pathname === bottomItem.path ? 'active' : ''}`}
                 title={sidebarCollapsed ? bottomItem.label : ''}>
                 <span className="si-nav-icon">{bottomItem.icon}</span>
                 <span className="si-nav-label">{bottomItem.label}</span>
                 {location.pathname === bottomItem.path && <span className="si-active-bar"/>}
               </Link>
-              <button
-                className="si-nav-item si-logout-item"
-                onClick={logout}
+              <button className="si-nav-item si-logout-item" onClick={logout}
                 title={sidebarCollapsed ? (isAm ? 'ውጣ' : 'Logout') : ''}>
                 <span className="si-nav-icon">🚪</span>
                 <span className="si-nav-label">{isAm ? 'ውጣ' : 'Logout'}</span>
@@ -508,9 +481,7 @@ const Layout = () => {
 
         {/* MAIN CONTENT */}
         <main className="si-workspace">
-          <div className="si-content">
-            <Outlet />
-          </div>
+          <div className="si-content"><Outlet /></div>
 
           {/* FOOTER */}
           <footer className="si-footer-full">
@@ -538,3 +509,8 @@ const Layout = () => {
 };
 
 export default Layout;
+
+
+
+
+

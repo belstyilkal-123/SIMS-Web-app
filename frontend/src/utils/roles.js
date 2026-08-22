@@ -4,7 +4,7 @@
  */
 
 export const ROLES = {
-  ADMIN:  'super_administrator',
+  ADMIN:  'admin',
   FARMER: 'farmer',
   LABOR:  'labor',
 };
@@ -48,12 +48,12 @@ export const PERMISSIONS = {
 
 export const can = (user, permission) => {
   if (!user?.role) return false;
-  return PERMISSIONS[user.role]?.[permission] ?? false;
+  return PERMISSIONS[(user?.assignedRole || user?.role)]?.[permission] ?? false;
 };
 
 export const ROLE_META = {
   administrator: {
-    label_en: 'super_administrator',
+    label_en: 'admin',
     label_am: 'አስተዳዳሪ',
     icon: '🛡️',
     color: '#ef4444',
@@ -80,4 +80,6 @@ export const ROLE_META = {
     description_am: 'የሴንሰር ክትትል እና ታሪክ',
   },
 };
+
+
 

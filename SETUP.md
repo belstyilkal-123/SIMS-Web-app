@@ -104,6 +104,8 @@ const char* DEVICE_API_KEY = "same-value-as-backend-env"; // keep secret
 | Full sensor data | Every 30 s | `POST /api/esp8266/data` |
 | Server marks offline | After 30 s silence | Automatic (deviceStatusService) |
 
+- The server runs a status monitor every **10 seconds** that checks for devices with no heartbeat or data for **30+ seconds** and marks them **OFFLINE**.
+
 - If no heartbeat is received for **30 seconds**, the server marks the device **OFFLINE** and broadcasts a `device:status` WebSocket event.
 - The dashboard and Devices page update in real time — all sensor readings show `--` and all controls are disabled until the device reconnects.
 

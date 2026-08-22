@@ -1,7 +1,9 @@
 const mongoose = require('mongoose');
 
 /**
- * Payroll — monthly wage record for a labour worker, managed by office_manager.
+ * Payroll — monthly wage record for any active employee.
+ * Created by the Office Manager, approved by the Owner.
+ * Eligible users: admin, farmer, office_manager, labor (NOT owner).
  */
 const PayrollSchema = new mongoose.Schema({
   userId:        { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -13,9 +15,10 @@ const PayrollSchema = new mongoose.Schema({
   netPay:        { type: Number, default: 0, min: 0 },  // computed before save
   hoursWorked:   { type: Number, default: 0 },
   daysPresent:   { type: Number, default: 0 },
-  paymentStatus: { type: String, enum: ['pending', 'paid', 'cancelled'], default: 'pending' },
+  paymentStatus: { type: String, enum: ['pending', 'submitted', 'paid', 'cancelled'], default: 'pending' },
   paidAt:        { type: Date },
-  processedBy:   { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // office_manager
+  approvedBy:    { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  processedBy:   { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   notes:         { type: String, default: '' },
 }, { timestamps: true });
 

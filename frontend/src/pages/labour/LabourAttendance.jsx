@@ -81,8 +81,8 @@ export default function LabourAttendance() {
   return (
     <div className="lp-page">
       <div className="lp-header">
-        <h2>🗓️ My Attendance</h2>
-        <p className="lp-subtitle">Track your daily check-in, check-out, and monthly summary.</p>
+        <h2>👷 View & Mark Attendance</h2>
+        <p className="lp-subtitle">Check in/out and view your own attendance records.</p>
       </div>
 
       {/* Farm selector */}

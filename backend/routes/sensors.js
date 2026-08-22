@@ -13,7 +13,7 @@ async function canAccessDevice(deviceId, user) {
 // @route   GET /api/sensors
 // @desc    Get all sensors for a device
 // @access  Private
-router.get('/', protect, authorize('super_administrator', 'farmer'), async (req, res) => {
+router.get('/', protect, authorize('owner', 'admin', 'farmer'), async (req, res) => {
   try {
     const { deviceId } = req.query;
     let query;
@@ -38,7 +38,7 @@ router.get('/', protect, authorize('super_administrator', 'farmer'), async (req,
 // @route   POST /api/sensors
 // @desc    Add a new sensor
 // @access  Private
-router.post('/', protect, authorize('super_administrator'), async (req, res) => {
+router.post('/', protect, authorize('admin'), async (req, res) => {
   try {
     const { deviceId, type, name } = req.body;
     if (!await Device.exists({ _id: deviceId })) return res.status(404).json({ error: 'Device not found' });
@@ -51,4 +51,6 @@ router.post('/', protect, authorize('super_administrator'), async (req, res) => 
 });
 
 module.exports = router;
+
+
 

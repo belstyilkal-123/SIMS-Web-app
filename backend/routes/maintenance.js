@@ -1,19 +1,22 @@
 const express = require('express');
 const router  = express.Router();
 const MaintenanceTicket = require('../models/MaintenanceTicket');
-const { protect, authorize } = require('../middleware/authMiddleware');
+const Farm = require('../models/Farm');
+const { protect, authorize, getUserRole } = require('../middleware/authMiddleware');
 
-const SA    = 'super_administrator';
+const OWNER = 'owner';
 const OM    = 'office_manager';
 const FM    = 'farmer';
 const LB    = 'labor';
-const MGMT  = [SA, OM];
-const ALL   = [SA, OM, FM, LB];
 
-// ── GET /api/maintenance — list tickets (scoped by role) ─────────────────
-router.get('/', protect, authorize(...ALL), async (req, res) => {
+// Allowed roles for Maintenance module (Admin ❌ excluded)
+const MAINTENANCE_ROLES = [OWNER, OM, FM, LB];
+
+// ── GET /api/maintenance — List tickets (scoped by role) ─────────────────
+router.get('/', protect, authorize(...MAINTENANCE_ROLES), async (req, res) => {
   try {
     const { farmId, status, priority, category } = req.query;
+    const role = getUserRole(req.user);
     const query = {};
 
     if (farmId)   query.farmId   = farmId;
@@ -21,18 +24,24 @@ router.get('/', protect, authorize(...ALL), async (req, res) => {
     if (priority) query.priority = priority;
     if (category) query.category = category;
 
-    // Labour only sees tickets assigned to them or raised by them
-    if (req.user.role === LB) {
+    if (role === LB) {
+      // Labour only sees tickets assigned to them or raised by them
       query.$or = [
         { assignedTo: req.user._id },
         { raisedBy:   req.user._id },
       ];
-    }
-    // Farmer only sees tickets for their own farms
-    if (req.user.role === FM) {
-      const Farm = require('../models/Farm');
-      const myFarms = await Farm.find({ ownerId: req.user._id }).select('_id').lean();
-      query.farmId = { $in: myFarms.map(f => f._id) };
+    } else if (role === FM) {
+      // Farmer sees tickets for their assigned farm or raised by them
+      const myFarmIds = [];
+      if (req.user.farmId) myFarmIds.push(req.user.farmId);
+      if (req.user.assignedFarms?.length > 0) myFarmIds.push(...req.user.assignedFarms);
+
+      query.$or = [
+        { farmId: { $in: myFarmIds } },
+        { raisedBy: req.user._id }
+      ];
+    } else if (role === OM) {
+      // Office Manager sees relevant maintenance tickets
     }
 
     const tickets = await MaintenanceTicket.find(query)
@@ -49,13 +58,14 @@ router.get('/', protect, authorize(...ALL), async (req, res) => {
 });
 
 // ── GET /api/maintenance/:id ─────────────────────────────────────────────
-router.get('/:id', protect, authorize(...ALL), async (req, res) => {
+router.get('/:id', protect, authorize(...MAINTENANCE_ROLES), async (req, res) => {
   try {
     const ticket = await MaintenanceTicket.findById(req.params.id)
       .populate('farmId',    'name location')
       .populate('deviceId',  'name macAddress')
       .populate('raisedBy',  'name email')
       .populate('assignedTo','name email');
+
     if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
     res.json(ticket);
   } catch (err) {
@@ -63,48 +73,79 @@ router.get('/:id', protect, authorize(...ALL), async (req, res) => {
   }
 });
 
-// ── POST /api/maintenance — raise a new ticket (any role) ────────────────
-router.post('/', protect, authorize(...ALL), async (req, res) => {
+// ── POST /api/maintenance — Create maintenance ticket ────────────────────
+// Owner 🟡 | Office Manager ✅ | Farmer ✅ | Labour ✅ (Report Problem only)
+router.post('/', protect, authorize(OWNER, OM, FM, LB), async (req, res) => {
   try {
     const { farmId, deviceId, title, description, category, priority, scheduledFor, photos } = req.body;
     if (!farmId || !title) {
       return res.status(400).json({ error: 'farmId and title are required' });
     }
+
+    const role = getUserRole(req.user);
+
+    // Farmer can only create for their assigned farm
+    if (role === FM) {
+      const myFarmIds = [req.user.farmId?.toString(), ...(req.user.assignedFarms || []).map(id => id.toString())];
+      if (!myFarmIds.includes(farmId.toString())) {
+        return res.status(403).json({ error: 'You can only create maintenance tickets for your assigned farm' });
+      }
+    }
+
     const ticket = await MaintenanceTicket.create({
-      farmId, deviceId, title, description, category, priority,
-      scheduledFor, photos: photos || [],
+      farmId,
+      deviceId,
+      title,
+      description,
+      category: category || 'other',
+      priority: priority || 'medium',
+      scheduledFor,
+      photos: photos || [],
       raisedBy: req.user._id,
     });
+
     await ticket.populate([
-      { path: 'farmId',    select: 'name' },
-      { path: 'raisedBy',  select: 'name email' },
+      { path: 'farmId',   select: 'name' },
+      { path: 'raisedBy', select: 'name email' },
     ]);
+
     res.status(201).json(ticket);
   } catch (err) {
     res.status(500).json({ error: 'Failed to create ticket', details: err.message });
   }
 });
 
-// ── PUT /api/maintenance/:id — update ticket ─────────────────────────────
-// MGMT: update everything
-// Labour: update status (in_progress→resolved), add photos/resolution only on their ticket
-router.put('/:id', protect, authorize(...ALL), async (req, res) => {
+// ── PUT /api/maintenance/:id — Update maintenance ticket ──────────────────
+router.put('/:id', protect, authorize(...MAINTENANCE_ROLES), async (req, res) => {
   try {
     const ticket = await MaintenanceTicket.findById(req.params.id);
     if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
 
-    if (req.user.role === LB) {
-      // Labour can only update tickets assigned to them
+    const role = getUserRole(req.user);
+
+    if (role === LB) {
+      // Labour can only update status/photos on assigned tickets
       if (!ticket.assignedTo || ticket.assignedTo.toString() !== req.user._id.toString()) {
         return res.status(403).json({ error: 'You are not assigned to this ticket' });
       }
       const allowed = ['status', 'resolution', 'photos'];
       allowed.forEach(f => { if (req.body[f] !== undefined) ticket[f] = req.body[f]; });
       if (req.body.status === 'resolved') ticket.resolvedAt = new Date();
+    } else if (role === OM) {
+      // Office Manager can add repair cost and update status
+      const allowed = ['repairCost', 'status', 'resolution', 'assignedTo'];
+      allowed.forEach(f => { if (req.body[f] !== undefined) ticket[f] = req.body[f]; });
     } else {
-      // MGMT / Farmer can update all fields
-      const allowed = ['title','description','category','priority','status',
-        'assignedTo','resolution','photos','scheduledFor'];
+      // Owner & Farmer
+      const allowed = ['title', 'description', 'category', 'priority', 'status',
+        'assignedTo', 'resolution', 'photos', 'scheduledFor', 'repairCost'];
+      
+      // Farmer cannot set repairCost (Owner & OM only)
+      if (role === FM) {
+        const costIdx = allowed.indexOf('repairCost');
+        if (costIdx !== -1) allowed.splice(costIdx, 1);
+      }
+
       allowed.forEach(f => { if (req.body[f] !== undefined) ticket[f] = req.body[f]; });
       if (req.body.status === 'resolved' && !ticket.resolvedAt) ticket.resolvedAt = new Date();
       if (req.body.status === 'closed'   && !ticket.closedAt)   ticket.closedAt   = new Date();
@@ -112,18 +153,19 @@ router.put('/:id', protect, authorize(...ALL), async (req, res) => {
 
     await ticket.save();
     await ticket.populate([
-      { path: 'farmId',    select: 'name' },
-      { path: 'assignedTo',select: 'name email' },
-      { path: 'raisedBy',  select: 'name email' },
+      { path: 'farmId',     select: 'name' },
+      { path: 'assignedTo', select: 'name email' },
+      { path: 'raisedBy',   select: 'name email' },
     ]);
+
     res.json(ticket);
   } catch (err) {
     res.status(500).json({ error: 'Failed to update ticket', details: err.message });
   }
 });
 
-// ── DELETE /api/maintenance/:id — super_admin only ───────────────────────
-router.delete('/:id', protect, authorize(SA), async (req, res) => {
+// ── DELETE /api/maintenance/:id — Owner only ─────────────────────────────
+router.delete('/:id', protect, authorize(OWNER), async (req, res) => {
   try {
     const ticket = await MaintenanceTicket.findByIdAndDelete(req.params.id);
     if (!ticket) return res.status(404).json({ error: 'Ticket not found' });
@@ -133,8 +175,8 @@ router.delete('/:id', protect, authorize(SA), async (req, res) => {
   }
 });
 
-// ── GET /api/maintenance/stats/summary — counts per status/priority ──────
-router.get('/stats/summary', protect, authorize(...MGMT, FM), async (req, res) => {
+// ── GET /api/maintenance/stats/summary — Summary statistics ─────────────
+router.get('/stats/summary', protect, authorize(OWNER, OM, FM), async (req, res) => {
   try {
     const { farmId } = req.query;
     const match = {};
@@ -145,12 +187,13 @@ router.get('/stats/summary', protect, authorize(...MGMT, FM), async (req, res) =
       { $group: { _id: { status: '$status', priority: '$priority' }, count: { $sum: 1 } } },
     ]);
 
-    const summary = { open:0, assigned:0, in_progress:0, resolved:0, closed:0, critical:0, high:0 };
+    const summary = { open: 0, assigned: 0, in_progress: 0, resolved: 0, closed: 0, critical: 0, high: 0 };
     stats.forEach(s => {
       if (summary[s._id.status] !== undefined) summary[s._id.status] += s.count;
       if (s._id.priority === 'critical') summary.critical += s.count;
       if (s._id.priority === 'high')     summary.high     += s.count;
     });
+
     res.json(summary);
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch stats', details: err.message });

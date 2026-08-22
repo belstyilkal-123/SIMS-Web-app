@@ -90,16 +90,54 @@ const T = {
 };
 
 const ROLE_LABELS = {
-  en: { administrator: 'System Administrator', farmer: 'Farmer', labor: 'Labour Worker', office_manager: 'Office Manager' },
-  am: { administrator: 'የስርዓት አስተዳዳሪ', farmer: 'አርሶ አደር', labor: 'ሠራተኛ', office_manager: 'ቢሮ አስተዳዳሪ' },
+  en: { admin: 'System Administrator', owner: 'Investor / Owner', farmer: 'Farmer', labor: 'Labour Worker', office_manager: 'Office Manager' },
+  am: { admin: 'የስርዓት አስተዳዳሪ', owner: 'ባለቤት / ባለሃብት', farmer: 'አርሶ አደር', labor: 'ሠራተኛ', office_manager: 'ቢሮ አስተዳዳሪ' },
 };
+
+const Card = ({ children, style }) => (
+  <div className="glass-card" style={{ padding: 26, ...style }}>{children}</div>
+);
+
+const SectionTitle = ({ children }) => (
+  <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 20, paddingBottom: 10,
+    borderBottom: '1px solid var(--border)', color: 'var(--text-main)' }}>
+    {children}
+  </h3>
+);
+
+const Toggle = ({ name, label, checked, onChange }) => (
+  <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer',
+    padding: '8px 0', borderBottom: '1px solid var(--border)', userSelect: 'none' }}>
+    <span style={{ flex: 1, fontSize: '0.9rem', color: 'var(--text-main)' }}>{label}</span>
+    <span style={{
+      position: 'relative', display: 'inline-block',
+      width: 42, height: 24, flexShrink: 0,
+    }}>
+      <input type="checkbox" name={name} checked={checked}
+        onChange={onChange}
+        style={{ opacity: 0, width: 0, height: 0 }} />
+      <span style={{
+        position: 'absolute', inset: 0, borderRadius: 24,
+        background: checked ? '#16a34a' : '#cbd5e1',
+        transition: 'background 0.2s', cursor: 'pointer',
+      }}>
+        <span style={{
+          position: 'absolute', left: checked ? 20 : 3,
+          top: 3, width: 18, height: 18, borderRadius: '50%',
+          background: 'white', transition: 'left 0.2s',
+          boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
+        }} />
+      </span>
+    </span>
+  </label>
+);
 
 export default function Settings() {
   const { user, updateProfile } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
-    name: '', email: '', role: 'farmer',
+    name: '', email: '', role: 'farmer', avatar: '',
     lowMoistureThreshold: 30, optimalMoistureThreshold: 70, language: 'en',
     notifyEmail: true, notifyLowMoisture: true,
     notifyTankEmpty: true, notifyPumpAuto: false,
@@ -126,6 +164,7 @@ export default function Settings() {
         name: d.name || '',
         email: d.email || '',
         role: d.role || 'farmer',
+        avatar: d.avatar || '',
         lowMoistureThreshold:    d.lowMoistureThreshold    ?? 30,
         optimalMoistureThreshold: d.optimalMoistureThreshold ?? 70,
         language: d.language || 'en',
@@ -158,6 +197,17 @@ export default function Settings() {
         : name.endsWith('Threshold') ? (value === '' ? '' : Number(value)) : value,
     }));
   };
+
+  const handleAvatarChange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      setForm(prev => ({ ...prev, avatar: ev.target.result }));
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleBlur = e => setTouched(prev => ({ ...prev, [e.target.name]: true }));
 
   const handleSubmit = async e => {
@@ -204,45 +254,10 @@ export default function Settings() {
     } finally { setPwSaving(false); }
   };
 
+
+
   if (loading) return (
     <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>{t.loading}</div>
-  );
-
-  const Card = ({ children, style }) => (
-    <div className="glass-card" style={{ padding: 26, ...style }}>{children}</div>
-  );
-  const SectionTitle = ({ children }) => (
-    <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 20, paddingBottom: 10,
-      borderBottom: '1px solid var(--border)', color: 'var(--text-main)' }}>
-      {children}
-    </h3>
-  );
-
-  const Toggle = ({ name, label }) => (
-    <label style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer',
-      padding: '8px 0', borderBottom: '1px solid var(--border)', userSelect: 'none' }}>
-      <span style={{ flex: 1, fontSize: '0.9rem', color: 'var(--text-main)' }}>{label}</span>
-      <span style={{
-        position: 'relative', display: 'inline-block',
-        width: 42, height: 24, flexShrink: 0,
-      }}>
-        <input type="checkbox" name={name} checked={!!form[name]}
-          onChange={handleChange}
-          style={{ opacity: 0, width: 0, height: 0 }} />
-        <span style={{
-          position: 'absolute', inset: 0, borderRadius: 24,
-          background: form[name] ? '#16a34a' : '#cbd5e1',
-          transition: 'background 0.2s', cursor: 'pointer',
-        }}>
-          <span style={{
-            position: 'absolute', left: form[name] ? 20 : 3,
-            top: 3, width: 18, height: 18, borderRadius: '50%',
-            background: 'white', transition: 'left 0.2s',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
-          }} />
-        </span>
-      </span>
-    </label>
   );
 
   return (
@@ -269,6 +284,30 @@ export default function Settings() {
         {/* Profile */}
         <Card>
           <SectionTitle>{t.profileSection}</SectionTitle>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 20 }}>
+            <div style={{
+              width: 80, height: 80, borderRadius: '50%', background: 'var(--surface-hover)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+              fontSize: '2rem', color: 'var(--text-muted)', border: '1px solid var(--border)'
+            }}>
+              {form.avatar ? (
+                <img src={form.avatar} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                (form.name || 'U').charAt(0).toUpperCase()
+              )}
+            </div>
+            <div>
+              <label style={{ cursor: 'pointer', display: 'inline-block', padding: '8px 16px', background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: 8, fontSize: '0.9rem', fontWeight: 600 }}>
+                {isAm ? 'ፎቶ ይስቀሉ' : 'Upload Photo'}
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
+              </label>
+              {form.avatar && (
+                <button type="button" onClick={() => setForm(prev => ({ ...prev, avatar: '' }))} style={{ marginLeft: 10, background: 'none', border: 'none', color: '#ef4444', fontSize: '0.85rem', cursor: 'pointer', textDecoration: 'underline' }}>
+                  {isAm ? 'አስወግድ' : 'Remove'}
+                </button>
+              )}
+            </div>
+          </div>
           <FormField label={t.name} name="name" value={form.name}
             onChange={handleChange} onBlur={handleBlur}
             error={errors.name} touched={touched.name} required />
@@ -288,24 +327,26 @@ export default function Settings() {
           </div>
         </Card>
 
-        {/* Thresholds */}
-        <Card>
-          <SectionTitle>{t.thresholdsSection}</SectionTitle>
-          {touched.lowMoistureThreshold && touched.optimalMoistureThreshold && errors.thresholdRelation && (
-            <div style={{ background: '#fff3cd', border: '1px solid #ffc107', borderRadius: 8,
-              padding: '10px 14px', marginBottom: 16, color: '#856404', fontSize: '0.85rem' }}>
-              ⚠️ {errors.thresholdRelation}
-            </div>
-          )}
-          <FormField label={t.lowMoistureLabel} name="lowMoistureThreshold" type="number"
-            value={form.lowMoistureThreshold} onChange={handleChange} onBlur={handleBlur}
-            error={errors.lowMoistureThreshold} touched={touched.lowMoistureThreshold}
-            min={0} max={99} hint={t.lowMoistureHint} required />
-          <FormField label={t.optimalMoistureLabel} name="optimalMoistureThreshold" type="number"
-            value={form.optimalMoistureThreshold} onChange={handleChange} onBlur={handleBlur}
-            error={errors.optimalMoistureThreshold} touched={touched.optimalMoistureThreshold}
-            min={1} max={100} hint={t.optimalMoistureHint} required />
-        </Card>
+        {/* Thresholds - Restricted to farmer/owner/admin per RBAC */}
+        {['farmer', 'owner', 'admin'].includes(user?.assignedRole || user?.role) && (
+          <Card>
+            <SectionTitle>{t.thresholdsSection}</SectionTitle>
+            {touched.lowMoistureThreshold && touched.optimalMoistureThreshold && errors.thresholdRelation && (
+              <div style={{ background: '#fff3cd', border: '1px solid #ffc107', borderRadius: 8,
+                padding: '10px 14px', marginBottom: 16, color: '#856404', fontSize: '0.85rem' }}>
+                ⚠️ {errors.thresholdRelation}
+              </div>
+            )}
+            <FormField label={t.lowMoistureLabel} name="lowMoistureThreshold" type="number"
+              value={form.lowMoistureThreshold} onChange={handleChange} onBlur={handleBlur}
+              error={errors.lowMoistureThreshold} touched={touched.lowMoistureThreshold}
+              min={0} max={99} hint={t.lowMoistureHint} required />
+            <FormField label={t.optimalMoistureLabel} name="optimalMoistureThreshold" type="number"
+              value={form.optimalMoistureThreshold} onChange={handleChange} onBlur={handleBlur}
+              error={errors.optimalMoistureThreshold} touched={touched.optimalMoistureThreshold}
+              min={1} max={100} hint={t.optimalMoistureHint} required />
+          </Card>
+        )}
 
         {/* Language */}
         <Card>
@@ -323,10 +364,10 @@ export default function Settings() {
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 14, marginTop: -10 }}>
             ℹ️ {t.smtpNote}
           </p>
-          <Toggle name="notifyEmail"       label={t.notifyEmail} />
-          <Toggle name="notifyLowMoisture" label={t.notifyLowMoisture} />
-          <Toggle name="notifyTankEmpty"   label={t.notifyTankEmpty} />
-          <Toggle name="notifyPumpAuto"    label={t.notifyPumpAuto} />
+          <Toggle name="notifyEmail"       label={t.notifyEmail} checked={!!form.notifyEmail} onChange={handleChange} />
+          <Toggle name="notifyLowMoisture" label={t.notifyLowMoisture} checked={!!form.notifyLowMoisture} onChange={handleChange} />
+          <Toggle name="notifyTankEmpty"   label={t.notifyTankEmpty} checked={!!form.notifyTankEmpty} onChange={handleChange} />
+          <Toggle name="notifyPumpAuto"    label={t.notifyPumpAuto} checked={!!form.notifyPumpAuto} onChange={handleChange} />
         </Card>
 
         <button type="submit" className="btn btn-primary"

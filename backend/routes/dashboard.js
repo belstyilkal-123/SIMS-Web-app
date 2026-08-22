@@ -3,7 +3,7 @@ const router        = express.Router();
 const mongoose      = require('mongoose');
 const { protect, authorize, isAdministrator } = require('../middleware/authMiddleware');
 
-const DASHBOARD_ROLES = ['super_administrator', 'office_manager', 'farmer'];
+const DASHBOARD_ROLES = ['owner', 'admin', 'office_manager', 'farmer'];
 const SensorData    = require('../models/SensorData');
 const Device        = require('../models/Device');
 const Farm          = require('../models/Farm');
@@ -19,7 +19,8 @@ router.get('/summary', protect, authorize(...DASHBOARD_ROLES), async (req, res) 
     const { farmId } = req.query;
 
     // 1. Find devices — scope to a specific farm if requested
-    const ownedFarmIds = isAdministrator(req.user)
+    const isPrivileged = isAdministrator(req.user) || (req.user.assignedRole || req.user.role) === 'owner';
+    const ownedFarmIds = isPrivileged
       ? null
       : (await Farm.find({ ownerId: req.user._id }).select('_id')).map((farm) => farm._id);
     if (farmId && ownedFarmIds && !ownedFarmIds.some((id) => id.toString() === farmId)) {
@@ -96,7 +97,8 @@ router.get('/trends', protect, authorize(...DASHBOARD_ROLES), async (req, res) =
     const { farmId, days = 7 } = req.query;
     const dayCount = Math.min(parseInt(days) || 7, 30); // cap at 30 days
 
-    const ownedFarmIds = isAdministrator(req.user)
+    const isPrivilegedT = isAdministrator(req.user) || (req.user.assignedRole || req.user.role) === 'owner';
+    const ownedFarmIds = isPrivilegedT
       ? null
       : (await Farm.find({ ownerId: req.user._id }).select('_id')).map((farm) => farm._id);
     if (farmId && ownedFarmIds && !ownedFarmIds.some((id) => id.toString() === farmId)) {
@@ -162,4 +164,6 @@ function buildResponse(readings, lastLog, meta) {
 }
 
 module.exports = router;
+
+
 

@@ -1,0 +1,504 @@
+/* ================================================================
+   Expense Requests Page Styles
+   ================================================================ */
+
+.ex-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.ex-loading {
+  text-align: center;
+  padding: 60px;
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.ex-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.ex-header h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0 0 4px;
+}
+
+.ex-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────── */
+.ex-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ex-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ex-btn-primary {
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  color: white;
+}
+
+.ex-btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+}
+
+.ex-btn-danger {
+  background: #dc2626;
+  color: white;
+}
+
+.ex-btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.ex-btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.ex-btn-ghost:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+
+.ex-btn-small {
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  border-radius: 8px;
+}
+
+.ex-btn-approve {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.ex-btn-approve:hover:not(:disabled) {
+  background: #bbf7d0;
+}
+
+.ex-btn-reject {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.ex-btn-reject:hover:not(:disabled) {
+  background: #fecaca;
+}
+
+.ex-btn-process {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.ex-btn-process:hover:not(:disabled) {
+  background: #bfdbfe;
+}
+
+.ex-btn-cancel {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.ex-btn-cancel:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+/* ── Alerts ────────────────────────────────────────────────────────────── */
+.ex-error,
+.ex-success {
+  padding: 14px 18px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ex-error {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.ex-success {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.ex-error button,
+.ex-success button {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.ex-error button:hover,
+.ex-success button:hover {
+  opacity: 1;
+}
+
+/* ── KPI Strip ─────────────────────────────────────────────────────────── */
+.ex-kpi-row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.ex-kpi {
+  flex: 1 1 150px;
+  border-radius: 14px;
+  padding: 18px 20px;
+  text-align: center;
+  border: 1px solid transparent;
+  transition: transform 0.15s;
+}
+
+.ex-kpi:hover {
+  transform: translateY(-2px);
+}
+
+.ex-kpi-icon {
+  font-size: 1.4rem;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.ex-kpi-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.ex-kpi-amount {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.ex-kpi-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Filters ───────────────────────────────────────────────────────────── */
+.ex-filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.ex-input {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.88rem;
+  color: var(--text-main);
+  background: var(--surface);
+  transition: all 0.15s;
+}
+
+.ex-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
+.ex-search {
+  flex: 1;
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.ex-select {
+  min-width: 140px;
+}
+
+.ex-count {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+/* ── Empty State ───────────────────────────────────────────────────────── */
+.ex-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  font-size: 0.95rem;
+}
+
+/* ── Expense Cards ─────────────────────────────────────────────────────── */
+.ex-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ex-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  border-left: 4px solid;
+  padding: 18px 22px;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.15s;
+}
+
+.ex-card:hover {
+  box-shadow: var(--shadow-card-hover);
+}
+
+.ex-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.ex-card-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ex-category-icon {
+  font-size: 1.2rem;
+}
+
+.ex-card-title strong {
+  font-size: 1.05rem;
+  color: var(--text-main);
+}
+
+.ex-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ex-priority {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.ex-card-amount {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text-main);
+  white-space: nowrap;
+}
+
+.ex-card-body {
+  margin-bottom: 12px;
+}
+
+.ex-card-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.ex-card-desc {
+  font-size: 0.85rem;
+  color: var(--text-main);
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+
+.ex-receipt-tag {
+  display: inline-block;
+  background: #f0fdf4;
+  color: #15803d;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  margin-top: 8px;
+}
+
+.ex-approval-info,
+.ex-rejection-info {
+  font-size: 0.8rem;
+  margin-top: 8px;
+  padding: 6px 12px;
+  border-radius: 8px;
+}
+
+.ex-approval-info {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.ex-rejection-info {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.ex-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Modal ─────────────────────────────────────────────────────────────── */
+.ex-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.ex-modal {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 28px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.ex-modal-small {
+  max-width: 420px;
+}
+
+.ex-modal h3 {
+  margin: 0 0 16px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+/* ── Form ──────────────────────────────────────────────────────────────── */
+.ex-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ex-form-row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.ex-form-row .ex-field {
+  flex: 1;
+  min-width: 180px;
+}
+
+.ex-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ex-field label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.ex-textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+.ex-form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .ex-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ex-kpi {
+    flex: 1 1 120px;
+    padding: 14px 16px;
+  }
+
+  .ex-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ex-search {
+    max-width: none;
+  }
+
+  .ex-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ex-card-amount {
+    font-size: 1.1rem;
+  }
+
+  .ex-form-row {
+    flex-direction: column;
+  }
+
+  .ex-modal {
+    padding: 20px;
+    margin: 10px;
+  }
+}

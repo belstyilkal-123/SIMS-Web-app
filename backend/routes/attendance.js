@@ -3,8 +3,8 @@ const router     = express.Router();
 const Attendance = require('../models/Attendance');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-const MGMT = ['super_administrator', 'office_manager'];
-const ALL  = ['super_administrator', 'farmer', 'labor', 'office_manager'];
+const MGMT = ['admin', 'office_manager'];
+const ALL  = ['owner', 'admin', 'farmer', 'labor', 'office_manager'];
 
 // ── GET /api/attendance — list records ────────────────────────────────────
 router.get('/', protect, authorize(...ALL), async (req, res) => {
@@ -18,8 +18,9 @@ router.get('/', protect, authorize(...ALL), async (req, res) => {
     // Month filter: e.g. month=2026-07 → filter YYYY-MM prefix
     if (month)  query.date = { $regex: `^${month}` };
 
-    // Labour only see their own records
-    if (req.user.role === 'labor') {
+    // Labour only see their own records - use assignedRole for consistency
+    const role = req.user.assignedRole || req.user.role;
+    if (role === 'labor') {
       query.userId = req.user._id;
     } else if (userId) {
       query.userId = userId;
@@ -37,7 +38,7 @@ router.get('/', protect, authorize(...ALL), async (req, res) => {
 });
 
 // ── POST /api/attendance/checkin — labour self check-in ───────────────────
-router.post('/checkin', protect, authorize('labor', 'super_administrator', 'office_manager'), async (req, res) => {
+router.post('/checkin', protect, authorize('labor', 'admin', 'office_manager'), async (req, res) => {
   try {
     const { farmId } = req.body;
     if (!farmId) return res.status(400).json({ error: 'farmId is required' });
@@ -60,7 +61,7 @@ router.post('/checkin', protect, authorize('labor', 'super_administrator', 'offi
 });
 
 // ── POST /api/attendance/checkout — labour self check-out ─────────────────
-router.post('/checkout', protect, authorize('labor', 'super_administrator', 'office_manager'), async (req, res) => {
+router.post('/checkout', protect, authorize('labor', 'admin', 'office_manager'), async (req, res) => {
   try {
     const today = new Date().toISOString().slice(0, 10);
     const record = await Attendance.findOne({ userId: req.user._id, date: today });
@@ -79,8 +80,8 @@ router.post('/checkout', protect, authorize('labor', 'super_administrator', 'off
   }
 });
 
-// ── POST /api/attendance — admin/office_manager manual entry ─────────────
-router.post('/', protect, authorize(...MGMT), async (req, res) => {
+// ── POST /api/attendance — admin/office_manager/farmer manual entry ─────────────
+router.post('/', protect, authorize(...MGMT, 'farmer'), async (req, res) => {
   try {
     const { userId, farmId, date, status, checkIn, checkOut, notes } = req.body;
     if (!userId || !farmId || !date) {
@@ -106,7 +107,7 @@ router.post('/', protect, authorize(...MGMT), async (req, res) => {
 });
 
 // ── PUT /api/attendance/:id — update a record ─────────────────────────────
-router.put('/:id', protect, authorize(...MGMT), async (req, res) => {
+router.put('/:id', protect, authorize(...MGMT, 'farmer'), async (req, res) => {
   try {
     const record = await Attendance.findByIdAndUpdate(
       req.params.id,
@@ -121,7 +122,7 @@ router.put('/:id', protect, authorize(...MGMT), async (req, res) => {
 });
 
 // ── GET /api/attendance/summary — monthly summary per worker ──────────────
-router.get('/summary', protect, authorize(...MGMT, 'farmer'), async (req, res) => {
+router.get('/summary', protect, authorize(...MGMT, 'farmer', 'owner'), async (req, res) => {
   try {
     const { farmId, month } = req.query; // month = YYYY-MM
     if (!farmId || !month) {
@@ -158,4 +159,5 @@ router.get('/summary', protect, authorize(...MGMT, 'farmer'), async (req, res) =
 });
 
 module.exports = router;
+
 

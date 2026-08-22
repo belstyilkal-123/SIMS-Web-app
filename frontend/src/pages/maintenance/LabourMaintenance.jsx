@@ -6,9 +6,11 @@ import './Maintenance.css';
 
 const STATUS_COLORS = {
   open:        { bg:'#fef3c7', color:'#92400e' },
+  approved:    { bg:'#dcfce7', color:'#15803d' },
   assigned:    { bg:'#dbeafe', color:'#1e40af' },
   in_progress: { bg:'#ede9fe', color:'#7c3aed' },
   resolved:    { bg:'#dcfce7', color:'#15803d' },
+  confirmed:   { bg:'#dbeafe', color:'#1e40af' },
   closed:      { bg:'#f1f5f9', color:'#475569' },
   rejected:    { bg:'#fee2e2', color:'#b91c1c' },
 };
@@ -82,8 +84,8 @@ export default function LabourMaintenance() {
     <div className="mt-page">
       <div className="mt-header">
         <div>
-          <h2>🔧 Maintenance</h2>
-          <p className="mt-subtitle">View assigned repairs and report new issues.</p>
+          <h2>👷 My Maintenance Tasks</h2>
+          <p className="mt-subtitle">View assigned tasks, perform work, update status, and report completion/problems.</p>
         </div>
         <div style={{ display:'flex', border:'1px solid var(--border)', borderRadius:8, overflow:'hidden' }}>
           {[

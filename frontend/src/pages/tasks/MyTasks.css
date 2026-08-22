@@ -1,0 +1,233 @@
+/* ================================================================
+   MyTasks.css — shared task view for admin, farmer, office_manager
+   ================================================================ */
+
+.mt-page    { display: flex; flex-direction: column; gap: 20px; max-width: 1100px; }
+.mt-loading { text-align: center; padding: 60px; color: var(--text-muted); font-size: 1rem; }
+
+/* ── Header ────────────────────────────────────────────────────── */
+.mt-header   { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; }
+.mt-title    { font-size: 1.5rem; font-weight: 800; color: var(--text-main); margin: 0 0 4px; }
+.mt-subtitle { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+
+/* ── Banner ────────────────────────────────────────────────────── */
+.mt-banner {
+  padding: 11px 16px; border-radius: 8px; font-weight: 500; font-size: 0.875rem;
+  display: flex; align-items: center; gap: 8px;
+}
+.mt-banner--success { background: #ecfdf5; border: 1px solid #a7f3d0; color: #047857; }
+.mt-banner--error   { background: #fee2e2; border: 1px solid #fca5a5; color: #b91c1c; }
+.mt-banner__close {
+  margin-left: auto; background: none; border: none;
+  cursor: pointer; font-size: 1rem; color: inherit;
+}
+
+/* ── KPI strip ──────────────────────────────────────────────────── */
+.mt-kpi-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.mt-kpi {
+  flex: 1 1 110px; border-radius: 12px; padding: 16px;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 4px; text-align: center; border: 1px solid transparent;
+}
+.mt-kpi__value { font-size: 1.8rem; font-weight: 800; line-height: 1; }
+.mt-kpi__label { font-size: 0.72rem; color: var(--text-muted); font-weight: 500;
+  text-transform: uppercase; letter-spacing: .04em; }
+
+/* ── Filters ────────────────────────────────────────────────────── */
+.mt-filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.mt-filter-btn {
+  padding: 7px 18px; border-radius: 20px; border: 1.5px solid var(--border);
+  background: var(--surface); color: var(--text-muted);
+  font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all .15s;
+}
+.mt-filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+.mt-filter-btn--active {
+  background: linear-gradient(135deg,#16a34a,#15803d);
+  border-color: transparent; color: white;
+}
+
+/* ── Empty state ────────────────────────────────────────────────── */
+.mt-empty        { text-align: center; padding: 52px 24px; background: var(--surface); border-radius: 14px; border: 1px solid var(--border); }
+.mt-empty__icon  { font-size: 3rem; margin-bottom: 12px; }
+.mt-empty__msg   { font-size: 1rem; font-weight: 600; color: var(--text-main); margin: 0 0 6px; }
+.mt-empty__hint  { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+
+/* ── Cards grid ─────────────────────────────────────────────────── */
+.mt-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 18px;
+}
+
+/* ── Single card ────────────────────────────────────────────────── */
+.mt-card {
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 18px 20px 20px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  display: flex; flex-direction: column; gap: 13px;
+  transition: box-shadow .2s, transform .2s;
+}
+.mt-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+
+.mt-card__head {
+  display: flex; justify-content: space-between;
+  align-items: flex-start; gap: 10px;
+}
+.mt-card__title { font-weight: 700; font-size: 1rem; color: var(--text-main); line-height: 1.35; flex: 1; }
+.mt-card__desc  { font-size: 0.83rem; color: var(--text-muted); margin: 0; line-height: 1.5; }
+
+/* ── Status badge ───────────────────────────────────────────────── */
+.mt-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: 20px;
+  font-size: 0.68rem; font-weight: 700; white-space: nowrap; flex-shrink: 0;
+}
+.mt-badge__dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Meta grid ──────────────────────────────────────────────────── */
+.mt-card__meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mt-meta-item  {
+  background: var(--surface-hover); border-radius: 8px; padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.mt-meta-label { font-size: 0.67rem; color: var(--text-muted); font-weight: 600;
+  text-transform: uppercase; letter-spacing: .05em; }
+.mt-meta-value { font-size: 0.82rem; font-weight: 600; color: var(--text-main); }
+
+/* ── Overdue strip ──────────────────────────────────────────────── */
+.mt-overdue-strip {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #b91c1c;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Overdue tag (inline in meta) ───────────────────────────────── */
+.mt-overdue-tag {
+  display: inline-block; margin-left: 6px;
+  padding: 1px 7px; border-radius: 10px;
+  background: #fee2e2; color: #b91c1c;
+  font-size: 0.65rem; font-weight: 700;
+}
+
+/* ── Notes ──────────────────────────────────────────────────────── */
+.mt-card__notes {
+  font-size: 0.8rem; color: var(--text-muted);
+  background: var(--surface-hover); border-radius: 8px; padding: 8px 10px;
+  line-height: 1.5;
+}
+
+/* ── Progress bar ───────────────────────────────────────────────── */
+.mt-progress-wrap  { display: flex; align-items: center; gap: 8px; }
+.mt-progress-bar   { flex: 1; height: 7px; background: var(--border); border-radius: 4px; overflow: hidden; }
+.mt-progress-fill  { height: 100%; border-radius: 4px; transition: width .4s ease; }
+.mt-progress-pct   { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); width: 34px; text-align: right; }
+
+/* ── Step indicator ─────────────────────────────────────────────── */
+.mt-steps {
+  display: flex; align-items: center; gap: 0;
+  padding: 4px 0;
+}
+.mt-step {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  flex-shrink: 0;
+}
+.mt-step__dot {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--surface-hover); border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.72rem; font-weight: 700; color: var(--text-muted);
+  transition: all .25s;
+}
+.mt-step--done .mt-step__dot {
+  background: #15803d; border-color: #15803d; color: white;
+}
+.mt-step--active .mt-step__dot {
+  background: #1d4ed8; border-color: #1d4ed8; color: white;
+  box-shadow: 0 0 0 3px rgba(29,78,216,.2);
+}
+.mt-step__label {
+  font-size: 0.62rem; font-weight: 600; color: var(--text-muted);
+  white-space: nowrap; letter-spacing: .02em;
+}
+.mt-step--done .mt-step__label,
+.mt-step--active .mt-step__label  { color: var(--text-main); }
+
+.mt-step__line {
+  flex: 1; height: 2px; background: var(--border);
+  margin-bottom: 16px;   /* align with dot centres */
+  min-width: 20px;
+  transition: background .25s;
+}
+.mt-step__line--done { background: #15803d; }
+
+/* ── Action buttons ─────────────────────────────────────────────── */
+.mt-card__actions { display: flex; flex-direction: column; gap: 0; }
+
+/* base action button */
+.mt-action-btn {
+  width: 100%; padding: 14px 18px;
+  border: none; border-radius: 10px;
+  font-size: 0.92rem; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center;
+  justify-content: center; gap: 8px;
+  transition: opacity .15s, transform .1s;
+}
+.mt-action-btn:hover:not(:disabled) { opacity: .88; transform: translateY(-1px); }
+.mt-action-btn:active:not(:disabled) { transform: translateY(0); }
+.mt-action-btn:disabled { opacity: .55; cursor: not-allowed; }
+.mt-action-btn__icon { font-size: 1rem; }
+
+/* Start Task — blue */
+.mt-action-btn--start {
+  background: linear-gradient(135deg,#2563eb,#1d4ed8);
+  color: white;
+  box-shadow: 0 4px 14px rgba(37,99,235,.35);
+}
+
+/* Mark as Done — green */
+.mt-action-btn--done {
+  background: linear-gradient(135deg,#16a34a,#15803d);
+  color: white;
+  box-shadow: 0 4px 14px rgba(21,128,61,.35);
+}
+
+/* ── Sent / completed box ───────────────────────────────────────── */
+.mt-sent-box {
+  display: flex; align-items: flex-start; gap: 12px;
+  background: linear-gradient(135deg,#f0fdf4,#dcfce7);
+  border: 1.5px solid #86efac;
+  border-radius: 10px; padding: 14px 16px;
+}
+.mt-sent-box__icon { font-size: 1.4rem; flex-shrink: 0; margin-top: 1px; }
+.mt-sent-box__text {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.mt-sent-box__text strong {
+  font-size: 0.9rem; font-weight: 700; color: #14532d;
+}
+.mt-sent-box__text span {
+  font-size: 0.78rem; color: #15803d;
+}
+.mt-sent-box__time {
+  font-size: 0.72rem !important; color: #6b7280 !important; margin-top: 2px;
+}
+
+/* ── Spinner ────────────────────────────────────────────────────── */
+.mt-spinner {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,.4);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: mt-spin .6s linear infinite;
+}
+@keyframes mt-spin { to { transform: rotate(360deg); } }

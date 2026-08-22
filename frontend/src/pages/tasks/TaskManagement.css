@@ -1,0 +1,24 @@
+/* TaskManagement.css — office_manager and farmer task assignment page */
+
+.tm-btn {
+  padding: 10px 18px; border: none; border-radius: 9px;
+  font-size: 0.875rem; font-weight: 700; cursor: pointer;
+  transition: opacity .15s, transform .1s; display: inline-flex;
+  align-items: center; justify-content: center; gap: 6px;
+}
+.tm-btn:hover:not(:disabled) { opacity: .88; transform: translateY(-1px); }
+.tm-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+.tm-btn--primary {
+  background: linear-gradient(135deg,#16a34a,#15803d);
+  color: white;
+  box-shadow: 0 3px 10px rgba(21,128,61,.3);
+}
+.tm-btn--done {
+  background: linear-gradient(135deg,#16a34a,#15803d);
+  color: white; padding: 8px 14px; font-size: 0.82rem;
+}
+.tm-btn--del {
+  background: #fee2e2; color: #b91c1c;
+  padding: 8px 14px; font-size: 0.82rem;
+}

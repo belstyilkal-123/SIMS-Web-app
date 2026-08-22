@@ -1,27 +1,41 @@
 const express = require('express');
 const router  = express.Router();
-const { protect } = require('../middleware/authMiddleware');
+const { protect, authorize, getUserRole } = require('../middleware/authMiddleware');
 
-// @route  GET /api/reports/history
-// @desc   Get 30-day real sensor trends + irrigation logs
-// @access Private
-router.get('/history', protect, async (req, res) => {
+const ADMIN = 'admin';
+const OWNER = 'owner';
+const OM    = 'office_manager';
+const FM    = 'farmer';
+const LABOR = 'labor';
+
+// @route  GET /api/reports/history — Sensor & Irrigation history report
+// Admin 🟡 System, Owner ✅ Full, Farmer ✅ Full, Labour 🟡 Limited
+router.get('/history', protect, authorize(ADMIN, OWNER, FM, LABOR), async (req, res) => {
   try {
-    const Device       = require('../models/Device');
-    const Farm         = require('../models/Farm');
+    const Device        = require('../models/Device');
+    const Farm          = require('../models/Farm');
     const IrrigationLog = require('../models/IrrigationLog');
-    const SensorData   = require('../models/SensorData');
+    const SensorData    = require('../models/SensorData');
 
-    // 1. Scope to this user's farms
-    const isAdmin = req.user.role === 'super_administrator';
-    const farmQuery = isAdmin ? {} : { ownerId: req.user._id };
-    const farms   = await Farm.find(farmQuery);
-    const farmIds = farms.map(f => f._id);
+    const role = getUserRole(req.user);
+    let farmQuery = {};
 
+    if (role === OWNER) {
+      farmQuery = { ownerId: req.user._id };
+    } else if (role === FM) {
+      farmQuery = { ownerId: req.user._id };
+    } else if (role === LABOR) {
+      const User = require('../models/User');
+      const u = await User.findById(req.user._id).select('assignedFarms farmId');
+      const farmIds = u?.assignedFarms?.length ? u.assignedFarms : (u?.farmId ? [u.farmId] : []);
+      farmQuery = { _id: { $in: farmIds } };
+    }
+
+    const farms     = await Farm.find(farmQuery);
+    const farmIds   = farms.map(f => f._id);
     const devices   = await Device.find({ farmId: { $in: farmIds } });
     const deviceIds = devices.map(d => d._id);
 
-    // 2. Real irrigation logs — no fake fallback
     const dbLogs = await IrrigationLog.find({ deviceId: { $in: deviceIds } })
       .populate({ path: 'deviceId', populate: { path: 'farmId', select: 'name' } })
       .sort({ timestamp: -1 })
@@ -34,13 +48,11 @@ router.get('/history', protect, async (req, res) => {
       device:    log.deviceId?.name         || 'Unknown Unit',
       mode:      log.triggeredBy            || 'auto',
       status:    log.status,
-      waterUsed: log.duration ? Math.round(log.duration * (10 / 60)) : 0, // litres at 10L/min
+      waterUsed: log.duration ? Math.round(log.duration * (10 / 60)) : 0,
       duration:  log.duration || 0,
     }));
 
-    // 3. Real 30-day aggregate trends from SensorData
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-
     const aggResult = await SensorData.aggregate([
       {
         $match: {
@@ -61,7 +73,6 @@ router.get('/history', protect, async (req, res) => {
       { $sort: { '_id.date': 1 } }
     ]);
 
-    // Reshape into [{ date, soilMoisture, temperature, waterUsage }]
     const byDate = {};
     aggResult.forEach(({ _id, avg }) => {
       if (!byDate[_id.date]) byDate[_id.date] = { date: _id.date, soilMoisture: null, temperature: null, waterUsage: 0 };
@@ -69,7 +80,6 @@ router.get('/history', protect, async (req, res) => {
       if (_id.type === 'temperature') byDate[_id.date].temperature  = Math.round(avg * 10) / 10;
     });
 
-    // Add daily water usage from irrigation logs
     dbLogs.forEach(log => {
       if (!log.timestamp || !log.duration) return;
       const dateStr = new Date(log.timestamp).toLocaleDateString('en-GB').replace(/\//g, '/');
@@ -85,26 +95,35 @@ router.get('/history', protect, async (req, res) => {
       trends,
       hasRealData: logs.length > 0 || trends.length > 0,
       message: (logs.length === 0 && trends.length === 0)
-        ? 'No data yet. Connect your ESP8266 device to start collecting data.'
+        ? 'No data available.'
         : null,
     });
-
   } catch (error) {
-    console.error('History fetch error:', error);
-    res.status(500).json({ error: 'Failed to fetch history logs' });
+    res.status(500).json({ error: 'Failed to fetch history logs', details: error.message });
   }
 });
 
-// @route  GET /api/reports/daily
-router.get('/daily', protect, async (req, res) => {
+// @route  GET /api/reports/daily — Daily aggregate report
+router.get('/daily', protect, authorize(ADMIN, OWNER, FM, LABOR), async (req, res) => {
   try {
     const SensorData    = require('../models/SensorData');
     const IrrigationLog = require('../models/IrrigationLog');
     const Device        = require('../models/Device');
     const Farm          = require('../models/Farm');
 
-    const isAdmin   = req.user.role === 'super_administrator';
-    const farms     = await Farm.find(isAdmin ? {} : { ownerId: req.user._id });
+    const role = getUserRole(req.user);
+    let farmQuery = {};
+
+    if (role === OWNER || role === FM) {
+      farmQuery = { ownerId: req.user._id };
+    } else if (role === LABOR) {
+      const User = require('../models/User');
+      const u = await User.findById(req.user._id).select('assignedFarms farmId');
+      const farmIds = u?.assignedFarms?.length ? u.assignedFarms : (u?.farmId ? [u.farmId] : []);
+      farmQuery = { _id: { $in: farmIds } };
+    }
+
+    const farms     = await Farm.find(farmQuery);
     const farmIds   = farms.map(f => f._id);
     const devices   = await Device.find({ farmId: { $in: farmIds } });
     const deviceIds = devices.map(d => d._id);
@@ -123,27 +142,63 @@ router.get('/daily', protect, async (req, res) => {
     const totalWater = todayLogs.reduce((s, l) => s + Math.round((l.duration || 0) * (10 / 60)), 0);
 
     res.json({
-      date:                  new Date().toISOString().split('T')[0],
-      waterUsage:            totalWater,
-      averageMoisture:       moistureReading ? Math.round(moistureReading.value) : null,
-      averageTemperature:    tempReading     ? Math.round(tempReading.value)     : null,
-      irrigationDuration:    todayLogs.reduce((s, l) => s + (l.duration || 0), 0),
-      hasRealData:           moistureReading !== null,
+      date:               new Date().toISOString().split('T')[0],
+      waterUsage:         totalWater,
+      averageMoisture:    moistureReading ? Math.round(moistureReading.value) : null,
+      averageTemperature: tempReading     ? Math.round(tempReading.value)     : null,
+      irrigationDuration: todayLogs.reduce((s, l) => s + (l.duration || 0), 0),
+      hasRealData:        moistureReading !== null,
     });
   } catch (error) {
     res.status(500).json({ error: 'Failed to generate report' });
   }
 });
 
+// @route  GET /api/reports/system — System health report (Admin only)
+router.get('/system', protect, authorize(ADMIN), async (req, res) => {
+  try {
+    const User   = require('../models/User');
+    const Device = require('../models/Device');
+    const Farm   = require('../models/Farm');
+
+    const totalUsers   = await User.countDocuments();
+    const activeUsers  = await User.countDocuments({ accountStatus: 'active' });
+    const pendingUsers = await User.countDocuments({ accountStatus: 'pending' });
+    const totalFarms   = await Farm.countDocuments();
+    const totalDevices = await Device.countDocuments();
+    const activeDevices= await Device.countDocuments({ status: 'active' });
+
+    res.json({
+      totalUsers,
+      activeUsers,
+      pendingUsers,
+      totalFarms,
+      totalDevices,
+      activeDevices,
+      systemStatus: 'Healthy',
+      serverTime: new Date(),
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to generate system report' });
+  }
+});
+
 // @route  GET /api/reports/export?format=csv
-router.get('/export', protect, async (req, res) => {
+// Admin 🟡 System, Owner ✅, OM ✅, Farmer 🟡 Limited
+router.get('/export', protect, authorize(ADMIN, OWNER, OM, FM), async (req, res) => {
   try {
     const IrrigationLog = require('../models/IrrigationLog');
     const Device        = require('../models/Device');
     const Farm          = require('../models/Farm');
 
-    const isAdmin   = req.user.role === 'super_administrator';
-    const farms     = await Farm.find(isAdmin ? {} : { ownerId: req.user._id });
+    const role = getUserRole(req.user);
+    let farmQuery = {};
+
+    if (role === OWNER || role === FM) {
+      farmQuery = { ownerId: req.user._id };
+    }
+
+    const farms     = await Farm.find(farmQuery);
     const farmIds   = farms.map(f => f._id);
     const devices   = await Device.find({ farmId: { $in: farmIds } });
     const deviceIds = devices.map(d => d._id);
@@ -164,9 +219,8 @@ router.get('/export', protect, async (req, res) => {
     }
     res.status(400).json({ error: 'Unsupported format. Use ?format=csv' });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to export' });
+    res.status(500).json({ error: 'Failed to export report' });
   }
 });
 
 module.exports = router;
-

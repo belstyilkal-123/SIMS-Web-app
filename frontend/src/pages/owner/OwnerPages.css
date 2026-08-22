@@ -1,0 +1,108 @@
+/* ================================================================
+   Owner Pages — shared styles
+   ================================================================ */
+
+.ow-page    { display: flex; flex-direction: column; gap: 20px; }
+.ow-loading { text-align: center; padding: 60px; color: var(--text-muted); }
+.ow-error   { background: #fee2e2; color: #b91c1c; padding: 16px; border-radius: 10px; }
+
+.ow-header h2  { font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin: 0 0 4px; }
+.ow-subtitle   { font-size: 0.85rem; color: var(--text-muted); margin: 0; }
+
+/* ── KPI strip ──────────────────────────────────────────── */
+.ow-kpi-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.ow-kpi {
+  flex: 1 1 110px; border-radius: 12px; padding: 14px 16px;
+  display: flex; flex-direction: column; align-items: center;
+  gap: 4px; text-align: center; border: 1px solid transparent;
+}
+.ow-kpi-value { font-size: 1.6rem; font-weight: 800; line-height: 1; }
+.ow-kpi-label { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; }
+
+/* ── Card ────────────────────────────────────────────────── */
+.ow-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 20px 22px; box-shadow: var(--shadow-card);
+}
+.ow-card h3 { margin: 0 0 14px; font-size: 0.95rem; font-weight: 700; color: var(--text-main); }
+.ow-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.ow-card-header h3 { margin: 0; }
+.ow-link { font-size: 0.8rem; color: var(--primary); font-weight: 600; text-decoration: none; }
+.ow-link:hover { text-decoration: underline; }
+.ow-empty { text-align: center; padding: 24px; color: var(--text-muted); font-size: 0.9rem; }
+.ow-sub   { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+
+/* ── Role grid ───────────────────────────────────────────── */
+.ow-role-grid { display: flex; gap: 12px; flex-wrap: wrap; }
+.ow-role-card {
+  flex: 1 1 110px; border-radius: 12px; padding: 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  text-align: center; border: 1px solid transparent;
+}
+
+/* ── Table ───────────────────────────────────────────────── */
+.ow-table-wrap { overflow-x: auto; }
+.ow-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.ow-table th {
+  padding: 10px 14px; text-align: left; font-size: 0.72rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted);
+  background: var(--surface-hover); border-bottom: 1px solid var(--border);
+}
+.ow-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text-main); vertical-align: middle; }
+.ow-table tr:last-child td { border-bottom: none; }
+.ow-table tr:hover td { background: var(--surface-hover); }
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.ow-btn {
+  padding: 5px 12px; border-radius: 7px; font-size: 0.78rem;
+  font-weight: 600; border: none; cursor: pointer; margin-right: 6px;
+  transition: opacity 0.15s;
+}
+.ow-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ow-btn-approve { background: #dcfce7; color: #15803d; }
+.ow-btn-approve:hover { background: #bbf7d0; }
+.ow-btn-reject  { background: #fee2e2; color: #b91c1c; }
+.ow-btn-reject:hover  { background: #fecaca; }
+
+/* ── Staff grid ──────────────────────────────────────────── */
+.ow-staff-grid { display: flex; gap: 12px; flex-wrap: wrap; }
+.ow-staff-card {
+  flex: 1 1 180px; display: flex; align-items: center; gap: 12px;
+  background: var(--surface-hover); border-radius: 10px; padding: 12px 14px;
+  border: 1px solid var(--border);
+}
+.ow-staff-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 1rem; flex-shrink: 0;
+}
+
+/* ── Quick links ─────────────────────────────────────────── */
+.ow-quick-links { display: flex; gap: 10px; flex-wrap: wrap; }
+.ow-quick-link {
+  flex: 1 1 140px; display: flex; flex-direction: column; align-items: center;
+  gap: 6px; padding: 16px 12px; border-radius: 12px;
+  background: var(--surface-hover); border: 1px solid var(--border);
+  text-decoration: none; color: var(--text-main); font-size: 0.82rem;
+  font-weight: 600; transition: all 0.15s; text-align: center;
+}
+.ow-quick-link:hover { border-color: var(--primary); background: rgba(21,128,61,0.06); color: var(--primary); }
+
+/* ── Payroll approval page extras ───────────────────────────────── */
+.ow-success {
+  background: #ecfdf5; color: #047857; padding: 12px 16px;
+  border-radius: 8px; border: 1px solid #a7f3d0;
+  display: flex; align-items: center; font-weight: 500; font-size: 0.875rem;
+}
+.ow-badge {
+  display: inline-block; padding: 3px 9px; border-radius: 12px;
+  font-size: 0.7rem; font-weight: 700;
+}
+.ow-no-pad { padding: 0 !important; }
+.ow-btn-primary {
+  background: linear-gradient(135deg,#16a34a,#15803d);
+  color: white; border: none; padding: 7px 16px;
+  border-radius: 8px; font-weight: 600; font-size: 0.82rem; cursor: pointer;
+}
+.ow-btn-primary:hover:not(:disabled) { opacity: 0.88; }
+.ow-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }

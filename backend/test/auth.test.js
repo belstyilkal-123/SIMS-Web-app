@@ -28,9 +28,19 @@ jest.mock('../models/User', () => {
   };
   mockUser.findOne  = jest.fn(({ email } = {}) => Promise.resolve(users.find(u => u.email === email) || null));
   mockUser.findById = jest.fn((id) => Promise.resolve(users.find(u => u._id === id) || null));
+  mockUser.find     = jest.fn(() => ({ select: jest.fn().mockResolvedValue([]) }));
   mockUser.findByIdAndUpdate = jest.fn(() => Promise.resolve(null)); // for saveRefreshToken
   mockUser.create   = jest.fn(async (data) => {
-    const u = { ...data, _id: `id_${Date.now()}`, role: data.role || 'farmer', language: data.language || 'en', isActive: true, createdAt: new Date() };
+    const u = {
+      ...data,
+      _id: `id_${Date.now()}`,
+      role: data.assignedRole || data.role || 'farmer',
+      assignedRole: data.assignedRole || data.role || 'farmer',
+      accountStatus: 'active',
+      isActive: true,
+      language: data.language || 'en',
+      createdAt: new Date(),
+    };
     u.matchPassword = async (pw) => pw === data.password;
     users.push(u);
     return u;
@@ -45,18 +55,41 @@ app.use(require('../middleware/errorHandler'));
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 describe('POST /api/auth/register', () => {
-  it('returns 201 with token on valid data', async () => {
+  it('returns 202 (pending) on valid data — no token issued', async () => {
     const res = await request(app).post('/api/auth/register').send({
-      name: 'Test Farmer', email: 'farmer@test.com', password: 'securepass1'
+      name: 'Test Farmer', email: 'farmer@test.com',
+      password: 'securepass1', requestedRole: 'farmer',
     });
-    expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty('token');
-    expect(res.body.role).toBe('farmer'); // public reg always gives farmer
+    expect(res.status).toBe(202);
+    expect(res.body.accountStatus).toBe('pending');
+    expect(res.body).not.toHaveProperty('token'); // spec: no token until approved
+  });
+
+  it('returns 400 if requestedRole is missing', async () => {
+    const res = await request(app).post('/api/auth/register').send({
+      name: 'No Role', email: 'norole@test.com', password: 'securepass1',
+    });
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('error');
+  });
+
+  it('returns 400 if requestedRole is owner (not allowed for self-registration)', async () => {
+    const res = await request(app).post('/api/auth/register').send({
+      name: 'Try Owner', email: 'owner@test.com', password: 'securepass1', requestedRole: 'owner',
+    });
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 if requestedRole is admin (not allowed for self-registration)', async () => {
+    const res = await request(app).post('/api/auth/register').send({
+      name: 'Try Admin', email: 'admin@test.com', password: 'securepass1', requestedRole: 'admin',
+    });
+    expect(res.status).toBe(400);
   });
 
   it('returns 400 if email is missing', async () => {
     const res = await request(app).post('/api/auth/register').send({
-      name: 'No Email', password: 'password123'
+      name: 'No Email', password: 'password123', requestedRole: 'farmer',
     });
     expect(res.status).toBe(400);
     expect(res.body).toHaveProperty('error');
@@ -64,20 +97,20 @@ describe('POST /api/auth/register', () => {
 
   it('returns 400 if password too short', async () => {
     const res = await request(app).post('/api/auth/register').send({
-      name: 'Short Pw', email: 'short@test.com', password: '123'
+      name: 'Short Pw', email: 'short@test.com', password: '123', requestedRole: 'farmer',
     });
     expect(res.status).toBe(400);
   });
 
-  it('returns 400 if user already exists', async () => {
+  it('returns 409 if user already exists', async () => {
     const email = 'dup@test.com';
     const User  = require('../models/User');
     User.findOne.mockResolvedValueOnce({ _id: 'existing', email });
 
     const res = await request(app).post('/api/auth/register').send({
-      name: 'Dup', email, password: 'password123'
+      name: 'Dup', email, password: 'password123', requestedRole: 'farmer'
     });
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(409);
     expect(res.body.error).toMatch(/already exists/i);
   });
 });
@@ -87,8 +120,8 @@ describe('POST /api/auth/login', () => {
     const User = require('../models/User');
     User.findOne.mockResolvedValueOnce({
       _id: 'uid1', name: 'Farmer', email: 'f@farm.com',
-      role: 'farmer', language: 'en',
-      matchPassword: async () => true, isActive: true,
+      role: 'farmer', assignedRole: 'farmer', accountStatus: 'active',
+      language: 'en', matchPassword: async () => true,
     });
 
     const res = await request(app).post('/api/auth/login').send({
@@ -102,7 +135,7 @@ describe('POST /api/auth/login', () => {
     const User = require('../models/User');
     User.findOne.mockResolvedValueOnce({
       _id: 'uid2', name: 'X', email: 'x@x.com',
-      matchPassword: async () => false, isActive: true,
+      accountStatus: 'active', matchPassword: async () => false,
     });
 
     const res = await request(app).post('/api/auth/login').send({
@@ -153,8 +186,8 @@ describe('GET /api/auth/profile', () => {
     const User  = require('../models/User');
     // protect middleware calls User.findById().select('-password')
     User.findById
-      .mockReturnValueOnce({ select: jest.fn().mockResolvedValue({ _id: 'uid_profile', name: 'Profile User', isActive: true, email: 'p@p.com', role: 'farmer', language: 'en' }) }) // protect middleware
-      .mockReturnValueOnce({ select: jest.fn().mockResolvedValue({ _id: 'uid_profile', name: 'Profile User', isActive: true, email: 'p@p.com', role: 'farmer', language: 'en' }) }); // profile route
+      .mockReturnValueOnce({ select: jest.fn().mockResolvedValue({ _id: 'uid_profile', name: 'Profile User', isActive: true, email: 'p@p.com', role: 'farmer', assignedRole: 'farmer', accountStatus: 'active', language: 'en' }) }) // protect middleware
+      .mockReturnValueOnce({ select: jest.fn().mockResolvedValue({ _id: 'uid_profile', name: 'Profile User', isActive: true, email: 'p@p.com', role: 'farmer', assignedRole: 'farmer', accountStatus: 'active', language: 'en' }) }); // profile route
 
     const res = await request(app)
       .get('/api/auth/profile')
@@ -163,4 +196,5 @@ describe('GET /api/auth/profile', () => {
     expect(res.body.name).toBe('Profile User');
   });
 });
+
 

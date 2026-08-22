@@ -1,0 +1,287 @@
+/* ================================================================
+   Financial Reports Page Styles
+   ================================================================ */
+
+.fr-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.fr-loading {
+  text-align: center;
+  padding: 60px;
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.fr-error {
+  text-align: center;
+  padding: 40px;
+  background: #fee2e2;
+  color: #b91c1c;
+  border-radius: 14px;
+  font-size: 0.95rem;
+}
+
+.fr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.fr-header h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-main);
+  margin: 0 0 4px;
+}
+
+.fr-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+.fr-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fr-btn-danger {
+  background: #dc2626;
+  color: white;
+}
+
+.fr-btn-danger:hover {
+  background: #b91c1c;
+}
+
+/* ── Inputs ─────────────────────────────────────────────────────────────── */
+.fr-input {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.88rem;
+  color: var(--text-main);
+  background: var(--surface);
+}
+
+.fr-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
+.fr-select {
+  min-width: 150px;
+}
+
+/* ── KPI Grid ───────────────────────────────────────────────────────────── */
+.fr-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.fr-kpi {
+  border-radius: 14px;
+  padding: 20px;
+  text-align: center;
+  border: 1px solid transparent;
+  transition: transform 0.15s;
+}
+
+.fr-kpi:hover {
+  transform: translateY(-2px);
+}
+
+.fr-kpi-icon {
+  font-size: 1.5rem;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.fr-kpi-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.fr-kpi-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Cards ──────────────────────────────────────────────────────────────── */
+.fr-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: var(--shadow-card);
+}
+
+.fr-card h3 {
+  margin: 0 0 16px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.fr-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.fr-card-header h3 {
+  margin: 0;
+}
+
+.fr-badge {
+  background: var(--surface-hover);
+  color: var(--text-muted);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* ── Section Grid ───────────────────────────────────────────────────────── */
+.fr-section-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.fr-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.fr-stat {
+  text-align: center;
+  padding: 12px;
+  background: var(--surface-hover);
+  border-radius: 10px;
+}
+
+.fr-stat-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.fr-stat-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  display: block;
+}
+
+.fr-stat-amount {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
+}
+
+/* ── Charts Grid ────────────────────────────────────────────────────────── */
+.fr-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.fr-card-wide {
+  grid-column: span 2;
+}
+
+.fr-no-data {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* ── Quick Links ────────────────────────────────────────────────────────── */
+.fr-quick-links {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.fr-quick-link {
+  padding: 12px 18px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-main);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+
+.fr-quick-link:hover {
+  border-color: var(--primary);
+  background: rgba(22, 163, 74, 0.06);
+  color: var(--primary);
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .fr-charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fr-card-wide {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 600px) {
+  .fr-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .fr-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .fr-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .fr-quick-links {
+    flex-direction: column;
+  }
+
+  .fr-quick-link {
+    text-align: center;
+  }
+}

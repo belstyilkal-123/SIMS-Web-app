@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
+import { LanguageContext } from '../context/LanguageContext';
 import { io } from 'socket.io-client';
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import GISMap from '../components/GISMap';
@@ -105,7 +106,7 @@ const translations = {
 
 const Dashboard = () => {
   const { user } = useContext(AuthContext);
-  const isAmharic = user?.language === 'am';
+  const { isAmharic } = useContext(LanguageContext);
   const t = isAmharic ? translations.am : translations.en;
 
   const [farms, setFarms] = useState([]);
@@ -410,45 +411,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Panel 1 Card 1.5: Soil NPK Levels */}
-      <div className="card summary-card">
-        <h3>{t.npkInfo}</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '15px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ color: 'var(--text-muted)' }}>{t.nitrogen}:</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '80px', height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${isDeviceOnline ? Math.min(100, data.nitrogen) : 0}%`, background: '#3b82f6' }} />
-              </div>
-              <strong style={{ fontSize: '1rem', color: isDeviceOnline ? '#3b82f6' : 'var(--text-muted)', width: '40px', textAlign: 'right' }}>
-                {isDeviceOnline ? `${data.nitrogen} mg` : '--'}
-              </strong>
-            </div>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ color: 'var(--text-muted)' }}>{t.phosphorus}:</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '80px', height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${isDeviceOnline ? Math.min(100, data.phosphorus) : 0}%`, background: '#eab308' }} />
-              </div>
-              <strong style={{ fontSize: '1rem', color: isDeviceOnline ? '#eab308' : 'var(--text-muted)', width: '40px', textAlign: 'right' }}>
-                {isDeviceOnline ? `${data.phosphorus} mg` : '--'}
-              </strong>
-            </div>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ color: 'var(--text-muted)' }}>{t.potassium}:</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '80px', height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${isDeviceOnline ? Math.min(100, data.potassium) : 0}%`, background: '#ef4444' }} />
-              </div>
-              <strong style={{ fontSize: '1rem', color: isDeviceOnline ? '#ef4444' : 'var(--text-muted)', width: '40px', textAlign: 'right' }}>
-                {isDeviceOnline ? `${data.potassium} mg` : '--'}
-              </strong>
-            </div>
-          </div>
-        </div>
-      </div>
+
 
       {/* Panel 1 Card 2: Alerts & Local Buzzer Log */}
       <div className="card summary-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>

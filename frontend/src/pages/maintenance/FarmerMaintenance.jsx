@@ -72,8 +72,8 @@ export default function FarmerMaintenance() {
     <div className="mt-page">
       <div className="mt-header">
         <div>
-          <h2>🔧 Maintenance & Support</h2>
-          <p className="mt-subtitle">Track field equipment issues and submit support requests.</p>
+          <h2>🌱 Farm Maintenance</h2>
+          <p className="mt-subtitle">Report farm/device problems, request maintenance, assign tasks to Labour, and confirm completion.</p>
         </div>
       </div>
 

@@ -58,6 +58,22 @@
 .op-btn-pay { background: #dcfce7; color: #15803d; }
 .op-btn-pay:hover { background: #bbf7d0; }
 
+/* new action button modifiers */
+.op-btn-submit  { background: #dbeafe; color: #1d4ed8; }
+.op-btn-submit:hover  { background: #bfdbfe; }
+.op-btn-approve { background: #dcfce7; color: #15803d; }
+.op-btn-approve:hover { background: #bbf7d0; }
+.op-btn-reject  { background: #fee2e2; color: #b91c1c; }
+.op-btn-reject:hover  { background: #fecaca; }
+.op-btn-edit    { background: #fef3c7; color: #92400e; }
+.op-btn-edit:hover    { background: #fde68a; }
+.op-btn-del     { background: #fee2e2; color: #b91c1c; }
+.op-btn-del:hover     { background: #fecaca; }
+.op-btn-sm:disabled   { opacity: 0.45; cursor: not-allowed; }
+
+/* label helper */
+.op-label { font-size: 0.74rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; display: block; }
+
 .op-btn-icon {
   background: none; border: none; cursor: pointer;
   font-size: 1rem; padding: 4px 6px; border-radius: 6px;

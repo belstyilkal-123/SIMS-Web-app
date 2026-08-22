@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import EmptyState from '../components/EmptyState';
 import FormField from '../components/FormField';
+import PermissionDeniedToast from '../components/common/PermissionDeniedToast';
 import { API_URL, SOCKET_URL } from '../config/api';
 
 const translations = {
@@ -74,6 +75,28 @@ const Devices = () => {
   const { user } = useContext(AuthContext);
   const isAmharic = user?.language === 'am';
   const t = isAmharic ? translations.am : translations.en;
+
+  // Role-based permissions:
+  // - Owner: Full access (View, Add, Edit, Remove, Control Pump)
+  // - Farmer: View ✅, Add ✅, Edit ✅, Remove 🟡 (own farm only), Control Pump ✅
+  // - Admin: View 🟡, View Sensor Data 🟡
+  // - Labour: View 🟡 (limited), View Sensor Data 🟡, Report Problem ✅
+  const userRole = user?.assignedRole || user?.role;
+  const isOwner = userRole === 'owner';
+  const isFarmer = userRole === 'farmer';
+  const isAdmin = userRole === 'admin';
+  const isLabour = userRole === 'labor' || userRole === 'labour';
+  
+  const canAddDevice = isOwner || isFarmer || isAdmin;
+  const canEditDevice = isOwner || isFarmer || isAdmin;
+  const canDeleteDevice = isOwner || isFarmer || isAdmin; // Farmer: own farm devices only (checked in backend)
+  const canControlPump = isOwner || isFarmer;
+  const canViewSensorData = isOwner || isFarmer || isAdmin || isLabour;
+  const canReportProblem = isOwner || isFarmer || isLabour;
+  const isViewOnly = isAdmin || isLabour;
+
+  // Permission denied toast state
+  const [showPermDenied, setShowPermDenied] = useState(false);
 
   const [devices, setDevices] = useState([]);
   const [selectedDevice, setSelectedDevice] = useState(null);
@@ -292,8 +315,8 @@ const Devices = () => {
               : `${devices.length} device${devices.length !== 1 ? 's' : ''} registered`}
           </p>
         </div>
-        {/* Only admin can register devices */}
-        {user?.role === 'super_administrator' && (
+        {/* Owner and Farmer can register devices */}
+        {canAddDevice && (
           <button className="btn btn-primary" onClick={openRegister}>
             {t.registerDevice}
           </button>
@@ -367,22 +390,26 @@ const Devices = () => {
                     🕐 {new Date(device.lastSeen).toLocaleString()}
                   </div>
                 )}
-                {/* Edit / Delete — admin only */}
-                {user?.role === 'super_administrator' && (
+                {/* Edit / Delete — Owner and Farmer */}
+                {(canEditDevice || canDeleteDevice) && (
                   <div style={{ display:'flex', gap:6, marginTop:10 }}>
-                    <button
-                      className="btn btn-outline"
-                      style={{ flex:1, padding:'5px 8px', fontSize:'0.75rem' }}
-                      onClick={e => { e.stopPropagation(); openEdit(device); }}>
-                      ✏️ {isAmharic ? 'አስተካክል' : 'Edit'}
-                    </button>
-                    <button
-                      style={{ padding:'5px 10px', fontSize:'0.75rem', borderRadius:8,
-                        background:'#fee2e2', color:'#b91c1c', border:'1px solid #fca5a5',
-                        cursor:'pointer', fontWeight:600 }}
-                      onClick={e => { e.stopPropagation(); handleDelete(device._id); }}>
-                      🗑️
-                    </button>
+                    {canEditDevice && (
+                      <button
+                        className="btn btn-outline"
+                        style={{ flex:1, padding:'5px 8px', fontSize:'0.75rem' }}
+                        onClick={e => { e.stopPropagation(); openEdit(device); }}>
+                        ✏️ {isAmharic ? 'አስተካክል' : 'Edit'}
+                      </button>
+                    )}
+                    {canDeleteDevice && (
+                      <button
+                        style={{ padding:'5px 10px', fontSize:'0.75rem', borderRadius:8,
+                          background:'#fee2e2', color:'#b91c1c', border:'1px solid #fca5a5',
+                          cursor:'pointer', fontWeight:600 }}
+                        onClick={e => { e.stopPropagation(); handleDelete(device._id); }}>
+                        🗑️
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -471,7 +498,7 @@ const Devices = () => {
                 🛠️ {t.testingPanelTitle}
               </h3>
 
-              {!isSelectedOnline && (
+              {!isSelectedOnline && canControlPump && (
                 <div style={{ background:'#fee2e2', border:'1px solid #fca5a5', borderRadius:10,
                   padding:'12px 16px', marginBottom:14, display:'flex', gap:10, alignItems:'flex-start' }}>
                   <span style={{ fontSize:'1.3rem' }}>⚠️</span>
@@ -486,40 +513,65 @@ const Devices = () => {
                 </div>
               )}
 
-              <p style={{ fontSize:'0.82rem', color:'var(--text-muted)', marginBottom:16, lineHeight:1.5 }}>
-                {t.testingInstructions}
-              </p>
+              {canControlPump ? (
+                <>
+                  <p style={{ fontSize:'0.82rem', color:'var(--text-muted)', marginBottom:16, lineHeight:1.5 }}>
+                    {t.testingInstructions}
+                  </p>
 
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
-                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-                  <button className="btn btn-primary"
-                    onClick={() => sendTestCommand('PUMP_ON')}
-                    disabled={!isSelectedOnline || readings.pump === 'ON'}
-                    style={{ width:'100%', padding:'11px', fontSize:'0.875rem' }}>
-                    💦 {t.testPumpOn}
-                  </button>
-                  <button className="btn btn-danger"
-                    onClick={() => sendTestCommand('PUMP_OFF')}
-                    disabled={!isSelectedOnline || readings.pump === 'OFF'}
-                    style={{ width:'100%', padding:'11px', fontSize:'0.875rem' }}>
-                    🛑 {t.testPumpOff}
-                  </button>
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+                    <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                      <button className="btn btn-primary"
+                        onClick={() => sendTestCommand('PUMP_ON')}
+                        disabled={!isSelectedOnline || readings.pump === 'ON'}
+                        style={{ width:'100%', padding:'11px', fontSize:'0.875rem' }}>
+                        💦 {t.testPumpOn}
+                      </button>
+                      <button className="btn btn-danger"
+                        onClick={() => sendTestCommand('PUMP_OFF')}
+                        disabled={!isSelectedOnline || readings.pump === 'OFF'}
+                        style={{ width:'100%', padding:'11px', fontSize:'0.875rem' }}>
+                        🛑 {t.testPumpOff}
+                      </button>
+                    </div>
+                    <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                      <button className="btn btn-secondary"
+                        onClick={() => sendTestCommand('BUZZER_ON')}
+                        disabled={!isSelectedOnline || readings.buzzer === 'ON'}
+                        style={{ width:'100%', padding:'11px', fontSize:'0.875rem' }}>
+                        🔊 {t.testBuzzerOn}
+                      </button>
+                      <button className="btn btn-danger"
+                        onClick={() => sendTestCommand('BUZZER_OFF')}
+                        disabled={!isSelectedOnline || readings.buzzer === 'OFF'}
+                        style={{ width:'100%', padding:'11px', fontSize:'0.875rem' }}>
+                        🔇 {t.testBuzzerOff}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                /* View-only notice for Admin/Labour */
+                <div 
+                  onClick={() => setShowPermDenied(true)}
+                  style={{ 
+                    padding:'16px', borderRadius:10, background:'#f1f5f9',
+                    textAlign:'center', fontSize:'0.85rem', color:'var(--text-muted)', fontWeight:500,
+                    border:'1px solid var(--border)', cursor:'pointer',
+                    transition:'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#e2e8f0';
+                    e.currentTarget.style.borderColor = '#cbd5e1';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = '#f1f5f9';
+                    e.currentTarget.style.borderColor = 'var(--border)';
+                  }}>
+                  👁️ Device control is restricted to Owners and Farmers.<br/>
+                  <span style={{ fontSize:'0.78rem' }}>You can monitor device status but not control hardware.</span>
                 </div>
-                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-                  <button className="btn btn-secondary"
-                    onClick={() => sendTestCommand('BUZZER_ON')}
-                    disabled={!isSelectedOnline || readings.buzzer === 'ON'}
-                    style={{ width:'100%', padding:'11px', fontSize:'0.875rem' }}>
-                    🔊 {t.testBuzzerOn}
-                  </button>
-                  <button className="btn btn-danger"
-                    onClick={() => sendTestCommand('BUZZER_OFF')}
-                    disabled={!isSelectedOnline || readings.buzzer === 'OFF'}
-                    style={{ width:'100%', padding:'11px', fontSize:'0.875rem' }}>
-                    🔇 {t.testBuzzerOff}
-                  </button>
-                </div>
-              </div>
+              )}
             </div>
 
           </div>
@@ -635,9 +687,16 @@ const Devices = () => {
         </div>
       )}
 
+      {/* Permission Denied Toast */}
+      <PermissionDeniedToast 
+        show={showPermDenied} 
+        onClose={() => setShowPermDenied(false)} 
+        isAmharic={isAmharic} 
+      />
     </div>
   );
 };
 
 export default Devices;
+
 
