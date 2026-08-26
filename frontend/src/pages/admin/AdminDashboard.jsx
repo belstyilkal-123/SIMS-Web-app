@@ -90,7 +90,7 @@ export default function AdminDashboard() {
   return (
     <div className="ap-page">
       <div className="ap-header">
-        <h2>🛡️ Admin Dashboard</h2>
+        <h2><img src="/admin-icon.png" alt="admin" style={{width: '1.2em', height: '1.2em', verticalAlign: 'middle', marginRight: '8px'}}/>Admin Dashboard</h2>
         <p className="ap-subtitle">System administration, user approvals, and security overview.</p>
       </div>
 

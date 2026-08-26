@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import axios from 'axios';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import FormField from '../components/FormField';
 import { validators } from '../utils/validation';
@@ -14,10 +14,7 @@ const T = {
     emailRequired: 'Email address is required',
     invalidEmail: 'Enter a valid email address',
     errorMessage: 'Failed to send reset link. Please try again.',
-    devModeTitle: 'Dev Mode — Reset Link Ready',
-    devModeNote: 'SMTP is not configured. Click the button below to reset your password directly:',
-    devModeBtn: '🔑 Open Reset Password Page',
-    devModeCopy: 'Or copy this URL:',
+    successMessage: 'If that email is in our system, a reset link has been sent.',
     tryDifferent: 'Try a different email',
   },
   am: {
@@ -27,10 +24,7 @@ const T = {
     emailRequired: 'ኢሜይል አድራሻ ያስፈልጋል',
     invalidEmail: 'ትክክለኛ ኢሜይል አድራሻ ያስፈልጋል',
     errorMessage: 'ዳግም ማስጀመሪያ ሊንክ ማላክ አልተቻለም። እንደገና ይሞክሩ።',
-    devModeTitle: 'ሙከራ ሁኔታ — ዳግም ማስጀመሪያ ሊንክ ዝግጁ ነው',
-    devModeNote: 'SMTP አልተዋቀረም። የይለፍ ቃልዎን ዳግም ለማስጀመር ከታች ያለውን ቁልፍ ይጫኑ:',
-    devModeBtn: '🔑 ዳግም ማስጀመሪያ ገጽ ክፈት',
-    devModeCopy: 'ወይም ይህን URL ይቅዱ:',
+    successMessage: 'ኢሜይሉ በስርዓታችን ውስጥ ካለ፣ ዳግም ማስጀመሪያ ሊንክ ተልኳል።',
     tryDifferent: 'ሌላ ኢሜይል ሞክር',
   }
 };
@@ -39,12 +33,10 @@ const ForgotPassword = () => {
   const { user } = useContext(AuthContext);
   const lang = user?.language || localStorage.getItem('preferredLanguage') || 'en';
   const t    = T[lang] || T.en;
-  const navigate = useNavigate();
 
   const [email, setEmail]       = useState('');
   const [touched, setTouched]   = useState(false);
-  const [resetUrl, setResetUrl] = useState('');
-  const [smtpMsg, setSmtpMsg]   = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [error, setError]       = useState('');
   const [submitting, setSub]    = useState(false);
 
@@ -58,28 +50,17 @@ const ForgotPassword = () => {
 
     setSub(true);
     setError('');
-    setResetUrl('');
-    setSmtpMsg('');
+    setSuccessMsg('');
     try {
       const res = await axios.post(`${API_URL}/api/auth/forgot-password`, {
         email: email.trim().toLowerCase()
       });
-      if (res.data.resetUrl) {
-        setResetUrl(res.data.resetUrl);
-      } else {
-        setSmtpMsg(res.data.message);
-      }
+      setSuccessMsg(res.data.message || t.successMessage);
     } catch (err) {
       setError(err.response?.data?.error || t.errorMessage);
     } finally {
       setSub(false);
     }
-  };
-
-  const handleDevClick = () => {
-    const parts = resetUrl.split('/reset-password/');
-    if (parts.length === 2) navigate(`/reset-password/${parts[1]}`);
-    else window.location.href = resetUrl;
   };
 
   return (
@@ -92,28 +73,11 @@ const ForgotPassword = () => {
           <p style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: '0.85rem' }}>{t.subtitle}</p>
         </div>
 
-        {/* SMTP success */}
-        {smtpMsg && (
+        {/* Success */}
+        {successMsg && (
           <div style={{ background:'#ecfdf5', border:'1px solid #a7f3d0', borderRadius:8,
             padding:'12px 16px', marginBottom:'1rem', color:'#047857', fontWeight:500, fontSize:'0.875rem' }}>
-            ✅ {smtpMsg}
-          </div>
-        )}
-
-        {/* Dev mode panel */}
-        {resetUrl && (
-          <div style={{ background:'#fffbeb', border:'2px solid #f59e0b', borderRadius:10, padding:'18px', marginBottom:'1rem' }}>
-            <p style={{ fontWeight:700, color:'#92400e', marginBottom:6, fontSize:'0.95rem' }}>🛠️ {t.devModeTitle}</p>
-            <p style={{ color:'#78350f', fontSize:'0.82rem', marginBottom:14, lineHeight:1.5 }}>{t.devModeNote}</p>
-            <button onClick={handleDevClick} className="btn btn-primary"
-              style={{ width:'100%', padding:'12px', marginBottom:12 }}>
-              {t.devModeBtn}
-            </button>
-            <p style={{ color:'#92400e', fontSize:'0.75rem', marginBottom:5 }}>{t.devModeCopy}</p>
-            <div style={{ background:'#fef3c7', border:'1px solid #fcd34d', borderRadius:6, padding:'8px 10px',
-              fontSize:'0.72rem', wordBreak:'break-all', color:'#451a03', fontFamily:'monospace', userSelect:'all' }}>
-              {resetUrl}
-            </div>
+            ✅ {successMsg}
           </div>
         )}
 
@@ -125,8 +89,8 @@ const ForgotPassword = () => {
           </div>
         )}
 
-        {/* Form — hide after dev link is shown */}
-        {!resetUrl && !smtpMsg && (
+        {/* Form — hide after success message is shown */}
+        {!successMsg && (
           <form onSubmit={handleSubmit} noValidate>
             <FormField
               label={t.emailLabel} name="email" type="email" value={email}
@@ -143,9 +107,9 @@ const ForgotPassword = () => {
           </form>
         )}
 
-        {/* Try different email after dev link */}
-        {(resetUrl || smtpMsg) && (
-          <button onClick={() => { setResetUrl(''); setSmtpMsg(''); setEmail(''); setTouched(false); }}
+        {/* Try different email */}
+        {successMsg && (
+          <button onClick={() => { setSuccessMsg(''); setEmail(''); setTouched(false); }}
             className="btn btn-outline" style={{ width:'100%', marginTop:10 }}>
             ← {t.tryDifferent}
           </button>

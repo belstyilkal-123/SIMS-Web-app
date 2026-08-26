@@ -315,7 +315,7 @@ const Layout = () => {
   const allItems  = navGroups.flatMap(g => g.items);
   const active    = allItems.find(i => i.path === location.pathname)
                  || (location.pathname === '/settings' ? bottomItem : null);
-  const pageTitle = active ? `${active.icon} ${active.label}` : '📊 Dashboard';
+  const pageTitle = active ? ( <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}> {active.icon === '🛡️' ? <img src="/admin-icon.png" alt="admin" style={{width: '1.2em', height: '1.2em', verticalAlign: 'middle'}}/> : active.icon} {active.label} </span> ) : '📊 Dashboard';
 
   const handleLangChange = async (lang) => {
     setLanguage(lang);
@@ -400,7 +400,7 @@ const Layout = () => {
                   borderRadius: 20, marginTop: 2,
                   background: meta.bg, color: meta.color,
                 }}>
-                  {meta.icon} {roleLabel}
+                  {role === 'admin' ? <img src="/admin-icon.png" alt="admin" style={{width: '1em', height: '1em', verticalAlign: 'middle'}}/> : meta.icon} {roleLabel}
                 </span>
               </div>
               <span className="si-chevron">{profileOpen ? '▲' : '▼'}</span>
@@ -430,7 +430,7 @@ const Layout = () => {
 
             {/* Role context banner */}
             <div className="si-role-banner" style={{ background: meta.bg, borderBottom: `2px solid ${meta.color}22` }}>
-              <span style={{ fontSize: '1.1rem' }}>{meta.icon}</span>
+              <span style={{ fontSize: '1.1rem', display: 'flex', alignItems: 'center' }}>{role === 'admin' ? <img src="/admin-icon.png" alt="admin" style={{width: '1.2em', height: '1.2em'}}/> : meta.icon}</span>
               <div>
                 <div style={{ fontSize: '0.7rem', fontWeight: 700, color: meta.color,
                   textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -452,7 +452,7 @@ const Layout = () => {
                     <Link key={item.path} to={item.path}
                       className={`si-nav-item ${location.pathname === item.path ? 'active' : ''}`}
                       title={sidebarCollapsed ? item.label : ''}>
-                      <span className="si-nav-icon">{item.icon}</span>
+                      <span className="si-nav-icon">{item.icon === '🛡️' ? <img src="/admin-icon.png" alt="admin" style={{width: '1.2em', height: '1.2em', verticalAlign: 'middle'}}/> : item.icon}</span>
                       <span className="si-nav-label">{item.label}</span>
                       {location.pathname === item.path && <span className="si-active-bar"/>}
                     </Link>

@@ -222,7 +222,8 @@ router.post('/forgot-password', [
       });
       return res.json({ message: 'If that email is in our system, a reset link has been sent.' });
     }
-    return res.json({ message: 'Reset link generated (dev)', resetUrl });
+    console.log(`[DEV MODE] Password Reset Link for ${user.email}: ${resetUrl}`);
+    return res.json({ message: 'If that email is in our system, a reset link has been sent.' });
   } catch (err) {
     res.status(500).json({ error: 'Failed to generate reset token', details: err.message });
   }
