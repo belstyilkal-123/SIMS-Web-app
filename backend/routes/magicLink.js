@@ -29,18 +29,26 @@ const generateJWT = (id) => {
 
 /* ── Email sender ──────────────────────────────────────────── */
 const sendMagicLinkEmail = async (email, magicUrl) => {
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
+  const isGmail = (process.env.SMTP_HOST || '').includes('gmail');
+  const transporter = nodemailer.createTransport(
+    isGmail
+      ? {
+          service: 'gmail',
+          auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+        }
+      : {
+          host: process.env.SMTP_HOST,
+          port: Number(process.env.SMTP_PORT) || 587,
+          secure: Number(process.env.SMTP_PORT) === 465,
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+          },
+        }
+  );
 
   await transporter.sendMail({
-    from: process.env.SMTP_FROM || 'noreply@sims-agri.com',
+    from: process.env.SMTP_FROM || `"SmartIrrigate SIMS" <${process.env.SMTP_USER}>`,
     to: email,
     subject: 'Your SmartIrrigate OS Sign-In Link',
     html: `
@@ -102,11 +110,23 @@ router.post('/request', async (req, res) => {
 
     // ── Production: send real email ──
     if (process.env.SMTP_HOST && process.env.SMTP_USER) {
-      await sendMagicLinkEmail(email, magicUrl);
-      return res.json({
-        message: 'Magic link sent! Check your email inbox (and spam folder).',
-        expiresInMinutes: 15,
-      });
+      try {
+        await sendMagicLinkEmail(email, magicUrl);
+        return res.json({
+          message: 'Magic link sent! Check your email inbox (and spam folder).',
+          expiresInMinutes: 15,
+        });
+      } catch (mailErr) {
+        console.warn('⚠️ [Magic Link Email Failed]:', mailErr.message);
+        console.log(`\n======================================================`);
+        console.log(`🔗 [DEV FALLBACK] Magic Link for ${email}:`);
+        console.log(`${magicUrl}`);
+        console.log(`======================================================\n`);
+        return res.json({
+          message: 'Magic link generated. (Check terminal console if SMTP is blocked)',
+          expiresInMinutes: 15,
+        });
+      }
     }
 
     // ── Dev mode: return link directly ──

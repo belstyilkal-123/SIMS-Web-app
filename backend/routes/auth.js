@@ -199,7 +199,8 @@ router.post('/forgot-password', [
     const errors = validationResult(req);
     if (!errors.isEmpty()) return res.status(400).json({ error: 'Validation failed', details: errors.array() });
 
-    const user = await User.findOne({ email: req.body.email });
+    const email = (req.body.email || '').trim().toLowerCase();
+    const user = await User.findOne({ email });
     if (!user) return res.json({ message: 'If that email is in our system, a reset link has been sent.' });
 
     const token  = crypto.randomBytes(20).toString('hex');
@@ -211,21 +212,62 @@ router.post('/forgot-password', [
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${token}`;
 
     if (process.env.SMTP_HOST && process.env.SMTP_USER) {
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT) || 587,
-        secure: false, auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-      });
-      await transporter.sendMail({
-        from: process.env.SMTP_FROM || 'no-reply@sims.com', to: user.email,
-        subject: 'Password Reset — SIMS',
-        text: `Reset your password: ${resetUrl}`,
-      });
-      return res.json({ message: 'If that email is in our system, a reset link has been sent.' });
+      try {
+        const isGmail = (process.env.SMTP_HOST || '').includes('gmail');
+        const transporter = nodemailer.createTransport(
+          isGmail
+            ? {
+                service: 'gmail',
+                auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+              }
+            : {
+                host: process.env.SMTP_HOST,
+                port: Number(process.env.SMTP_PORT) || 587,
+                secure: Number(process.env.SMTP_PORT) === 465,
+                auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+              }
+        );
+
+        await transporter.sendMail({
+          from: process.env.SMTP_FROM || `"SmartIrrigate SIMS" <${process.env.SMTP_USER}>`,
+          to: user.email,
+          subject: 'Password Reset — SIMS',
+          text: `Reset your password: ${resetUrl}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+              <h2 style="color: #2e7d32; text-align: center;">Smart Irrigation Management System</h2>
+              <p>Hello,</p>
+              <p>You recently requested to reset your password for your SIMS account. Click the button below to reset it:</p>
+              <div style="text-align: center; margin: 25px 0;">
+                <a href="${resetUrl}" style="background-color: #2e7d32; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Reset Password</a>
+              </div>
+              <p style="color: #666; font-size: 0.9em;">Or copy and paste this link in your browser:</p>
+              <p style="word-break: break-all; color: #1976d2; font-size: 0.85em;">${resetUrl}</p>
+              <p style="color: #888; font-size: 0.85em; margin-top: 20px;">This password reset link is valid for 1 hour. If you didn't request a password reset, you can safely ignore this email.</p>
+            </div>
+          `
+        });
+        console.log(`[SMTP] Password Reset Email sent to ${user.email}`);
+        return res.json({ message: 'If that email is in our system, a reset link has been sent.' });
+      } catch (mailErr) {
+        console.warn('⚠️ [SMTP Email Failed]:', mailErr.message);
+        console.log(`\n======================================================`);
+        console.log(`🔗 [DEV FALLBACK] Password Reset Link for ${user.email}:`);
+        console.log(`${resetUrl}`);
+        console.log(`======================================================\n`);
+        return res.json({ 
+          message: 'If that email is in our system, a reset link has been sent.' 
+        });
+      }
     }
+
+    console.log(`\n======================================================`);
     console.log(`[DEV MODE] Password Reset Link for ${user.email}: ${resetUrl}`);
+    console.log(`======================================================\n`);
     return res.json({ message: 'If that email is in our system, a reset link has been sent.' });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to generate reset token', details: err.message });
+    console.error('Forgot password error:', err);
+    res.status(500).json({ error: 'Failed to process password reset', details: err.message });
   }
 });
 
